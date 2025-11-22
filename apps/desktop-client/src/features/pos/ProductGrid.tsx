@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Star, LayoutGrid, Tag } from 'lucide-react';
 import Fuse from 'fuse.js';
 import { Product, MarketService, Promotion } from '@pulse/core-logic';
@@ -22,11 +22,11 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Fuse.js configuration for fuzzy search
-  const fuse = new Fuse(products, {
+  const fuse = useMemo(() => new Fuse(products, {
     keys: ['name', 'barcode', 'sku'],
     threshold: 0.3,
     includeScore: true,
-  });
+  }), [products]);
 
   useEffect(() => {
     if (searchQuery.trim() === '') {
@@ -39,7 +39,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
       const results = fuse.search(searchQuery);
       setFilteredProducts(results.map(result => result.item));
     }
-  }, [searchQuery, products, activeTab]);
+  }, [searchQuery, products, activeTab, fuse]);
 
   // Fetch active promotions
   useEffect(() => {
