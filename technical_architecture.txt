@@ -1,0 +1,144 @@
+Pulse: Technical Architecture & Monorepo Strategy
+
+1. System Overview
+
+Pulse is a high-performance, Offline-First Point of Sale (POS) and Inventory Management System (IMS). It utilizes a Monorepo architecture to share 100% of the business logic, types, and database interactions between the Desktop (Electron) and Mobile (React Native) clients.
+
+Core Philosophy: "The client is just a view." All intelligence resides in the shared core.
+
+2. Monorepo Directory Structure
+
+/pulse-monorepo
+├── /apps
+│   ├── /desktop-client     # Electron + React (Vite)
+│   └── /mobile-client      # React Native (Expo)
+├── /packages
+│   ├── /core-logic         # Shared Business Logic & Types
+│   │   ├── /src
+│   │   │   ├── /database   # Supabase & LocalDB adapters
+│   │   │   ├── /services   # SyncEngine, PrinterService
+│   │   │   ├── /store      # Zustand Global Stores
+│   │   │   ├── /types      # TypeScript Interfaces
+│   │   │   └── /utils      # Currency formatting, Validation
+│   │   └── package.json
+│   └── /ui-kit             # (Optional) Shared React Components
+├── package.json            # Root configuration (Workspaces)
+└── turbo.json              # Turborepo configuration (Build pipeline)
+
+
+3. Technology Stack & Libraries
+
+Core (Shared)
+
+Language: TypeScript 5.x
+
+Backend: Supabase (PostgreSQL 15+)
+
+State Management: zustand (Global State) + @tanstack/react-query (Server State & Caching)
+
+Validation: zod (Schema validation for forms and API responses)
+
+Date Handling: date-fns
+
+Desktop (Electron)
+
+Framework: Electron + React 18 + Vite
+
+Styling: TailwindCSS + SASS Modules (for unique complex components)
+
+Local DB: dexie (Wrapper for IndexedDB) for offline persistence.
+
+Printing: electron-pos-printer
+
+Mobile (React Native)
+
+Framework: Expo SDK 50+ (Expo Router v3)
+
+Styling: NativeWind (Tailwind for RN)
+
+Local DB: @nozbe/watermelondb or expo-sqlite (High performance local SQL)
+
+Hardware: expo-camera (Barcode), expo-haptics (Feedback)
+
+4. Database Schema (Supabase PostgreSQL)
+
+This schema supports the "Trader" analytics view (V2.0) by separating costs, prices, and tracking detailed movements.
+
+-- 1. Tenants/Workspaces (Supports multi-branch capability)
+create table workspaces (
+  id uuid primary key default gen_random_uuid(),
+  name text not null,
+  currency_code text default 'BGN',
+  created_at timestamptz default now()
+);
+
+-- 2. Products (The central asset)
+create table products (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id),
+  name text not null,
+  barcode text unique,
+  sku text,
+  cost_price numeric(10,2) not null, -- Critical for Profit calculation
+  sale_price numeric(10,2) not null,
+  stock_quantity numeric(10,2) default 0,
+  min_stock_level numeric(10,2) default 5,
+  category_id uuid, -- Link to categories table
+  updated_at timestamptz default now() -- Critical for Sync
+);
+
+-- 3. Sales (The transaction header)
+create table sales (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id),
+  user_id uuid references auth.users(id),
+  total_amount numeric(10,2) not null,
+  payment_method text check (payment_method in ('cash', 'card', 'food_voucher', 'split')),
+  status text default 'completed',
+  synced_at timestamptz default now(),
+  created_at timestamptz default now()
+);
+
+-- 4. Sale Items (The transaction details - JSONB vs Relational)
+-- We use Relational for better analytics queries later.
+create table sale_items (
+  id uuid primary key default gen_random_uuid(),
+  sale_id uuid references sales(id) on delete cascade,
+  product_id uuid references products(id),
+  product_name_snapshot text, -- Store name at time of sale in case it changes
+  cost_snapshot numeric(10,2), -- Store cost at time of sale for historical profit accuracy
+  price_snapshot numeric(10,2),
+  quantity numeric(10,2) not null
+);
+
+-- 5. Stock Movements (The Audit Trail)
+create table stock_movements (
+  id uuid primary key default gen_random_uuid(),
+  workspace_id uuid references workspaces(id),
+  product_id uuid references products(id),
+  quantity_change numeric(10,2) not null, -- Negative for sales, Positive for receive
+  reason text check (reason in ('sale', 'restock', 'waste', 'correction', 'return')),
+  reference_id uuid, -- Can link to a sale_id or po_id
+  created_at timestamptz default now()
+);
+
+
+5. The "Offline-First" Sync Protocol
+
+To ensure reliability when the internet cuts out, we implement a Queue-Based Sync Strategy in /core-logic:
+
+Reads: The UI always reads from the Local DB (Dexie/WatermelonDB). This ensures instant UI load times.
+
+Writes (Online): Write to Local DB -> Push to Supabase -> On Success, mark local entry as 'synced'.
+
+Writes (Offline): Write to Local DB -> Mark entry as 'dirty/unsynced' -> Add to SyncQueue.
+
+Reconnection:
+
+NetworkListener detects online status.
+
+SyncEngine iterates through SyncQueue.
+
+Pushes changes to Supabase.
+
+Conflict Resolution: "Server Wins" policy for product details, but "Additive" policy for stock (e.g., if stock changed on server, apply the delta of the sale rather than overwriting the absolute value).

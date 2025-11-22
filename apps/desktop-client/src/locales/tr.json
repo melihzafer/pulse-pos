@@ -1,0 +1,143 @@
+{
+  "common": {
+    "loading": "Yükleniyor...",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "delete": "Sil",
+    "edit": "Düzenle",
+    "clear": "Temizle",
+    "search": "Ara",
+    "actions": "İşlemler",
+    "name": "İsim",
+    "status": "Durum",
+    "deleteConfirm": "Bu öğeyi silmek istediğinizden emin misiniz?"
+  },
+  "sidebar": {
+    "pos": "Satış",
+    "inventory": "Stok",
+    "dashboard": "Panel",
+    "settings": "Ayarlar",
+    "toggleTheme": "Temayı Değiştir",
+    "logout": "Çıkış"
+  },
+  "pos": {
+    "searchPlaceholder": "Ürün ara (F1)...",
+    "searchButton": "Ürün Ara (F1)",
+    "stock": "Stok",
+    "noProducts": "Ürün bulunamadı",
+    "addToCart": "Sepete Ekle"
+  },
+  "cart": {
+    "title": "Sepet",
+    "item_one": "ürün",
+    "item_other": "ürün",
+    "empty": "Sepet boş",
+    "paymentMethod": "Ödeme Yöntemi",
+    "cash": "Nakit",
+    "card": "Kart",
+    "total": "Toplam",
+    "payNow": "Öde (F5)",
+    "clearConfirm": "Sepeti temizlemek istediğinizden emin misiniz?"
+  },
+  "payment": {
+    "title": "Ödemeyi Tamamla",
+    "totalAmount": "Toplam Tutar",
+    "paymentMethod": "Ödeme Yöntemi",
+    "cash": "Nakit",
+    "card": "Kart",
+    "amountTendered": "Ödenen Tutar",
+    "change": "Para Üstü",
+    "complete": "Ödemeyi Tamamla",
+    "processing": "İşleniyor...",
+    "success": "Ödeme Başarılı!",
+    "successPrint": "Ödeme başarılı! Fiş yazdırılıyor...",
+    "successNoPrint": "Ödeme başarılı, ancak yazdırma başarısız.",
+    "error": "Ödeme başarısız. Lütfen tekrar deneyin.",
+    "insufficient": "Yetersiz tutar"
+  },
+  "inventory": {
+    "title": "Stok Yönetimi",
+    "addProduct": "Ürün Ekle",
+    "loading": "Stok yükleniyor...",
+    "table": {
+      "name": "İsim",
+      "barcode": "Barkod",
+      "stock": "Stok",
+      "cost": "Maliyet",
+      "price": "Fiyat",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "status": {
+      "outOfStock": "Stokta Yok",
+      "lowStock": "Düşük Stok",
+      "inStock": "Stokta Var"
+    },
+    "empty": {
+      "title": "Envanterde ürün yok",
+      "subtitle": "Başlamak için ilk ürününüzü ekleyin"
+    },
+    "form": {
+      "addTitle": "Yeni Ürün Ekle",
+      "editTitle": "Ürünü Düzenle",
+      "name": "Ürün Adı",
+      "barcode": "Barkod",
+      "sku": "SKU",
+      "costPrice": "Maliyet Fiyatı",
+      "salePrice": "Satış Fiyatı",
+      "stock": "Stok Miktarı",
+      "minStock": "Min Stok Seviyesi",
+      "category": "Kategori",
+      "save": "Ürünü Kaydet",
+      "cancel": "İptal"
+    }
+  },
+  "dashboard": {
+    "title": "Panel",
+    "totalSales": "Toplam Satış",
+    "revenue": "Ciro",
+    "lowStock": "Düşük Stoklu Ürünler",
+    "recentSales": "Son Satışlar",
+    "noSales": "Bugün satış yok"
+  },
+  "settings": {
+    "printer": {
+      "title": "Yazıcı Yapılandırması",
+      "ip": "Yazıcı IP Adresi",
+      "port": "Port",
+      "test": "Yazıcıyı Test Et"
+    },
+    "workspace": {
+      "title": "Çalışma Alanı",
+      "name": "Çalışma Alanı Adı",
+      "id": "Çalışma Alanı ID"
+    },
+    "sync": {
+      "title": "Senkronizasyon Tercihleri",
+      "enable": "Otomatik senkronizasyonu etkinleştir",
+      "interval": "Senkronizasyon Aralığı (saniye)",
+      "recommended": "Önerilen: 300 saniye (5 dakika)"
+    },
+    "shifts": {
+      "title": "Vardiya Ayarları",
+      "enable": "Vardiya Yönetimini Etkinleştir",
+      "blindClose": "Kör Kapanış (Beklenen Nakiti Gizle)",
+      "requireReason": "Ödeme Giriş/Çıkış İçin Sebep Zorunlu"
+    },
+    "saveButton": {
+      "saving": "Kaydediliyor...",
+      "saved": "Kaydedildi!",
+      "error": "Hata!",
+      "default": "Ayarları Kaydet"
+    },
+    "language": {
+        "title": "Dil",
+        "select": "Dil Seçin"
+    },
+    "receipt": {
+      "title": "Fiş Ayarları",
+      "header": "Fiş Başlığı",
+      "taxRate": "Vergi Oranı"
+    }
+  }
+}

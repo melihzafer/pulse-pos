@@ -1,0 +1,75 @@
+Pulse: Executive Summary & Project Vision
+
+1. The Core Concept
+
+Pulse is not just a cash register; it is the central nervous system for modern retail and hospitality businesses. It bridges the gap between the physical floor (Sales) and back-office strategy (Inventory/Profitability).
+
+Target Audience:
+
+The "Trader" Owner: Wants to see real-time profit margins, cost analysis, and stock velocity.
+
+The Busy Staff: Needs a system that is fast, creates zero friction, and works even when the Wi-Fi dies.
+
+2. Key Differentiators (Why Pulse?)
+
+A. Unbreakable Reliability (Offline-First)
+
+Most web-based POS systems crash or freeze when the internet flickers. Pulse uses advanced Local Database technology.
+
+Scenario: It's 12:30 PM, the lunch rush. The internet goes down.
+
+Competitor: "System Offline" error. Staff panics. Sales stop.
+
+Pulse: Cashier continues scanning. Receipts print. The system syncs invisibly when the internet returns 20 minutes later. Zero revenue lost.
+
+B. "Trader" Grade Analytics (V2.0 Prep)
+
+We don't just count stock; we calculate value.
+
+COGS Tracking: We snapshot the cost of every item at the moment of sale.
+
+Data Integrity: Because we use PostgreSQL (Supabase), the data is structured for deep analysis (SQL queries) rather than messy NoSQL JSON dumps. This allows for future AI integrations that can predict "You will run out of Cola in 3 days."
+
+C. Unique UI/UX
+
+The interface is designed to be "invisible."
+
+Dark Mode Native: Designed for low-light restaurant environments and high-contrast visibility.
+
+Haptic & Sound Feedback: Every scan and tap gives physical feedback (on mobile), reducing errors.
+
+Visual Stock: Color-coded inventory levels (Green/Orange/Red) provide instant situational awareness.
+
+3. Implementation Phases
+
+Phase 1: The Foundation (Months 1-2)
+
+Deliverable: Functional Desktop POS & Mobile Companion.
+
+Capabilities: Scan barcode, Process Sale (Cash/Card), Print Receipt, View Stock List, Simple "End of Day" Report.
+
+Tech: Supabase setup, Electron App build, Basic Offline Sync.
+
+Phase 2: Operations & Sync (Months 3-4)
+
+Deliverable: Advanced Inventory & Multi-User.
+
+Capabilities: Goods Receiving (Mobile), Wastage Recording, User Roles (Admin vs Cashier), Full Sync Stability.
+
+Tech: Conflict resolution logic, WatermelonDB integration.
+
+Phase 3: The "Trader" Upgrade (Months 5+)
+
+Deliverable: Analytics Dashboard & API.
+
+Capabilities: Profit Heatmaps, Low Stock Predictions, Supplier Management.
+
+Tech: Next.js Admin Dashboard, AI Prediction Models.
+
+4. Business Value Propositions
+
+Stop Theft/Waste: Granular tracking of every stock movement makes internal theft immediately obvious.
+
+Speed: Native code (Rust/C++ under the hood of Electron/React Native) makes the app snappier than web-only POS systems.
+
+Ownership: You own your data. Exportable to CSV/Excel at any time via Supabase.

@@ -1,0 +1,204 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "clear": "Clear",
+    "send": "Send",
+    "search": "Search",
+    "actions": "Actions",
+    "name": "Name",
+    "status": "Status",
+    "amount": "Amount",
+    "reason": "Reason",
+    "noReason": "No reason provided",
+    "deleteConfirm": "Are you sure you want to delete this item?"
+  },
+  "shift": {
+    "management": "Shift Management",
+    "start": "Start Shift",
+    "enterStartCash": "Enter Start Cash Amount",
+    "openShift": "Open Shift",
+    "startTime": "Start Time",
+    "startCash": "Start Cash",
+    "payIn": "Pay In",
+    "payOut": "Pay Out",
+    "transactions": "Transactions",
+    "closeShift": "Close Shift",
+    "countCashDrawer": "Count Cash Drawer"
+  },
+  "customerDisplay": {
+    "welcome": "Welcome to Pulse Store",
+    "nextCustomer": "Next customer, please!",
+    "thankYou": "Thank You!",
+    "changeDue": "Change Due",
+    "yourCart": "Your Cart",
+    "totalToPay": "Total to Pay",
+    "subtotal": "Subtotal",
+    "tax": "Tax (10%)"
+  },
+  "customer": {
+    "select": "Select Customer",
+    "addNew": "Add New Customer",
+    "searchPlaceholder": "Search by name, phone or email...",
+    "createNew": "Create New Customer",
+    "nameRequired": "Customer name is required",
+    "created": "Customer created successfully",
+    "createError": "Failed to create customer",
+    "selected": "Customer {{name}} selected",
+    "notFound": "No customers found",
+    "noContact": "No contact info",
+    "phone": "Phone",
+    "email": "Email",
+    "points": "Points"
+  },
+  "sidebar": {
+    "pos": "POS",
+    "inventory": "Inventory",
+    "dashboard": "Dashboard",
+    "settings": "Settings",
+    "toggleTheme": "Toggle Theme",
+    "logout": "Logout"
+  },
+  "pos": {
+    "searchPlaceholder": "Search products (F1)...",
+    "searchButton": "Search Products (F1)",
+    "stock": "Stock",
+    "noProducts": "No products found",
+    "addToCart": "Add to Cart",
+    "productNotFound": "Product not found",
+    "allProducts": "All Products",
+    "favorites": "Favorites",
+    "parkedSales": "Parked Sales",
+    "noParkedSales": "No parked sales",
+    "parkOrder": "Park Order"
+  },
+  "cart": {
+    "title": "Cart",
+    "item_one": "item",
+    "item_other": "items",
+    "empty": "Cart is empty",
+    "paymentMethod": "Payment Method",
+    "cash": "Cash",
+    "card": "Card",
+    "total": "Total",
+    "pay": "Pay",
+    "payNow": "Pay Now (F5)",
+    "clearConfirm": "Are you sure you want to clear the cart?"
+  },
+  "payment": {
+    "title": "Complete Payment",
+    "totalAmount": "Total Amount",
+    "paymentMethod": "Payment Method",
+    "cash": "Cash",
+    "card": "Card",
+    "split": "Split Payment",
+    "voucher": "Food Voucher",
+    "remaining": "Remaining",
+    "amountTendered": "Amount Tendered",
+    "change": "Change",
+    "complete": "Complete Payment",
+    "processing": "Processing...",
+    "success": "Payment successful!",
+    "successPrint": "Payment successful! Printing receipt...",
+    "successNoPrint": "Payment successful, but printing failed.",
+    "error": "Payment failed. Please try again."
+  },
+  "receipt": {
+    "paymentSuccessful": "Payment Successful",
+    "thankYou": "Thank you for your purchase!",
+    "print": "Print Receipt",
+    "email": "Email Receipt",
+    "qr": "QR Code",
+    "newSale": "New Sale",
+    "printing": "Printing receipt...",
+    "emailSent": "Receipt sent to {{email}}"
+  },
+  "inventory": {
+    "title": "Inventory Management",
+    "addProduct": "Add Product",
+    "loading": "Loading inventory...",
+    "table": {
+      "name": "Name",
+      "barcode": "Barcode",
+      "stock": "Stock",
+      "cost": "Cost",
+      "price": "Price",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock",
+      "inStock": "In Stock"
+    },
+    "empty": {
+      "title": "No products in inventory",
+      "subtitle": "Add your first product to get started"
+    },
+    "form": {
+      "addTitle": "Add New Product",
+      "editTitle": "Edit Product",
+      "name": "Product Name",
+      "barcode": "Barcode",
+      "sku": "SKU",
+      "costPrice": "Cost Price",
+      "salePrice": "Sale Price",
+      "stock": "Stock Quantity",
+      "minStock": "Min Stock Level",
+      "category": "Category",
+      "save": "Save Product",
+      "cancel": "Cancel"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "totalSales": "Total Sales",
+    "revenue": "Revenue",
+    "lowStock": "Low Stock Items",
+    "recentSales": "Recent Sales",
+    "noSales": "No sales today"
+  },
+  "settings": {
+    "printer": {
+      "title": "Printer Configuration",
+      "ip": "Printer IP Address",
+      "port": "Port",
+      "test": "Test Printer"
+    },
+    "receipt": {
+      "title": "Receipt Configuration",
+      "header": "Receipt Header",
+      "taxRate": "Tax Rate"
+    },
+    "workspace": {
+      "title": "Workspace",
+      "name": "Workspace Name",
+      "id": "Workspace ID"
+    },
+    "sync": {
+      "title": "Sync Preferences",
+      "enable": "Enable automatic sync",
+      "interval": "Sync Interval (seconds)",
+      "recommended": "Recommended: 300 seconds (5 minutes)"
+    },
+    "shifts": {
+      "title": "Shift Configuration",
+      "enable": "Enable Shift Management",
+      "blindClose": "Blind Close (Hide Expected Cash)",
+      "requireReason": "Require Reason for Pay In/Out"
+    },
+    "saveButton": {
+      "saving": "Saving...",
+      "saved": "Saved!",
+      "error": "Error!",
+      "default": "Save Settings"
+    },
+    "language": {
+        "title": "Language",
+        "select": "Select Language"
+    }
+  }
+}

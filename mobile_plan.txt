@@ -1,0 +1,106 @@
+Mobile Client Plan (React Native + Expo)
+
+1. Project Setup
+
+Framework: Expo SDK (Managed Workflow).
+
+Navigation: expo-router (File-based routing, similar to Next.js).
+
+Database: expo-sqlite (or watermelondb if complex relations are needed).
+
+Styling: nativewind (Tailwind classes for RN).
+
+2. Directory Structure (Inside /apps/mobile-client)
+
+/app
+├── (tabs)
+│   ├── index.tsx          # Dashboard (Home)
+│   ├── inventory.tsx      # Stock List
+│   └── _layout.tsx        # Tab Bar Config
+├── /modals
+│   ├── scan.tsx           # Camera/Barcode Screen
+│   ├── quick-action.tsx   # The central "+" menu
+│   └── product/[id].tsx   # Product Detail/Edit
+├── /components            # UI Atoms (Buttons, Cards)
+└── babel.config.js        # Nativewind setup
+
+
+3. The "Unique" Mobile UX
+
+Bottom Tab Bar: Custom Floating Tab Bar (detached from the bottom edge), with a blurred background.
+
+The "Pulse" Button: The center tab is not a screen, but a Floating Action Button (FAB) that triggers the Quick Action modal.
+
+Cards: Use StyleSheet.create for complex shadows (iOS) and elevation (Android) to create a distinct "card" look for products.
+
+4. Key Feature Implementation
+
+A. Barcode Scanning (/modals/scan)
+
+Library: expo-camera.
+
+Logic:
+
+Request permissions on mount.
+
+Overlay a visual "Finder Frame" on the camera view.
+
+onBarCodeScanned: Debounce the event (wait 500ms to avoid double scans).
+
+Query Local DB for the barcode.
+
+If found -> Navigate to product/[id].
+
+If not found -> Navigate to product/new with barcode pre-filled.
+
+B. The Quick Action Modal
+
+Trigger: Center Tab Button.
+
+Animation: Slide up from bottom (Spring animation via react-native-reanimated).
+
+Options:
+
+"New Sale": Opens a simplified POS view.
+
+"Receive Stock": Opens Scan mode specifically for adding inventory (+ quantity).
+
+"Stock Check": Opens Scan mode just to view details.
+
+C. Mobile Offline Strategy
+
+Critical Requirement: The mobile app is often used in deep warehouses (Bad Wi-Fi).
+
+Solution:
+
+On app launch, pull the latest Product Reference Data from Supabase and store in SQLite.
+
+All "Scans" query SQLite, not the API.
+
+When a user updates stock (e.g., "Received 10 Coke"), save a StockMovement row to SQLite with synced: 0.
+
+Background Sync Task (or specific "Sync Now" button) pushes unsynced rows to Supabase.
+
+D. Dashboard
+
+Charts: Use react-native-gifted-charts for a lightweight, animated line chart showing "Today's Sales".
+
+Data Source: Aggregation of local sales data + cached server data.
+
+5. Development Steps for AI
+
+Initialize Expo project with TypeScript and Router.
+
+Configure Nativewind.
+
+Set up the Tab Navigation with the custom Floating Center Button.
+
+Implement expo-sqlite service in /core-logic.
+
+Build the ProductList screen using FlashList (Shopify) for performance with thousands of items.
+
+Build the Scanner modal.
+
+Implement the Stock Update logic.
+
+Wire up the Sync service to Supabase.

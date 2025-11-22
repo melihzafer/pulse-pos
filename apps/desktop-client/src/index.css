@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Enhanced Light Theme Panel Style */
+.glass-panel {
+  @apply bg-white/90 backdrop-blur-sm border border-gray-200/80 shadow-lg;
+}
+
+.dark .glass-panel {
+  @apply bg-slate-800/50 border-slate-700/50 shadow-2xl;
+}
+
+body {
+  @apply bg-gradient-to-br from-slate-50 via-blue-50/20 to-orange-50/10 text-gray-900 font-sans;
+  margin: 0;
+  overflow: hidden;
+}
+
+.dark body {
+  @apply bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950/20 text-gray-100;
+}
+

@@ -1,0 +1,101 @@
+Desktop Client Plan (Electron + React)
+
+1. Project Setup & Configuration
+
+Boilerplate: electron-vite-react template for fast HMR (Hot Module Replacement).
+
+Main Process: Handles hardware interactions (Printers, File System).
+
+Renderer Process: The React UI.
+
+Security: Context Isolation true, Node Integration false (Standard security practice).
+
+2. Directory Structure (Inside /apps/desktop-client)
+
+/src
+├── /main
+│   ├── index.ts           # Window creation
+│   └── printer.ts         # Node.js thermal printer logic
+├── /preload
+│   └── index.ts           # IPC Bridge (expose Printer functions to UI)
+├── /renderer
+│   ├── /src
+│   │   ├── /assets        # SCSS & Images
+│   │   ├── /components    # Shared UI Components
+│   │   ├── /features      # Feature-based folders
+│   │   │   ├── /pos       # The Sales Screen logic
+│   │   │   ├── /inventory # The Data Grid
+│   │   │   └── /settings  # Local config
+│   │   ├── /layouts       # Sidebar/Layout wrappers
+│   │   └── main.tsx       # Entry point
+
+
+3. The "Unique" UI Style Guide (SCSS)
+
+We will use Tailwind for layout (Grid/Flex/Spacing) but SCSS for the "Pulse" aesthetic.
+
+Glassmorphism Lite: Panels will have a very subtle backdrop blur and semi-transparent dark background (bg-slate-900/90).
+
+Neon Accents: Primary actions (Pay, Save) will use a "glow" effect in CSS box-shadow matching the brand color (e.g., Electric Blue or Cyber Yellow).
+
+Typography: 'Inter' or 'JetBrains Mono' for numbers to give a tabular, technical feel.
+
+4. Key Feature Implementation
+
+A. The POS Screen (The "Cockpit")
+
+Layout: 60% Left (Product Grid), 40% Right (Cart).
+
+Keyboard First: Map F1 to Search, F5 to Pay, Esc to Clear.
+
+Fast Search: Local fuzzy search (using fuse.js on the locally cached product list) for instant results without network lag.
+
+Cart Logic:
+
+State is held in Zustand.
+
+addToCart(product): Checks local stock -> Adds line item -> Triggers sound.
+
+B. Printer Integration (IPC)
+
+Renderer: Calls window.electronAPI.printReceipt(receiptData).
+
+Main Process: Receives data, formats ESC/POS commands (Hex codes for bold, center, cut), and sends to the USB/Network printer IP defined in settings.
+
+C. Offline Sync (The Engine)
+
+Library: dexie (IndexedDB wrapper).
+
+Startup: Check Supabase for products updated since last_sync_timestamp. Download delta.
+
+Transaction:
+
+User clicks "Pay".
+
+App saves Sale to Dexie.
+
+App updates local Product Stock in Dexie.
+
+UI resets.
+
+Background worker attempts to POST sale to Supabase.
+
+If fail, retry in 5s (Exponential backoff).
+
+5. Development Steps for AI
+
+Initialize Electron-Vite-Typescript project.
+
+Setup Tailwind and SCSS pipeline.
+
+Install tanstack-query and zustand.
+
+Build the Sidebar and Layout.
+
+Implement Dexie database schema matching the Supabase schema.
+
+Build the Inventory Data Grid (Read from Dexie).
+
+Build the POS Interface (Write to Dexie).
+
+Implement the Sync Logic (Dexie <-> Supabase).
