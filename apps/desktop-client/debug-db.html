@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debug Database - Store Credit</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #2563eb; }
+    .section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      margin: 5px;
+    }
+    button:hover { background: #1d4ed8; }
+    button.danger { background: #dc2626; }
+    button.danger:hover { background: #b91c1c; }
+    button.success { background: #16a34a; }
+    button.success:hover { background: #15803d; }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+    .customer-card {
+      border: 1px solid #e5e7eb;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      background: #f9fafb;
+    }
+    .credit { color: #16a34a; font-weight: bold; }
+    .no-credit { color: #dc2626; }
+  </style>
+</head>
+<body>
+  <h1>🔍 Database Debug Tool - Store Credit</h1>
+  
+  <div class="section">
+    <h2>Database Version Check</h2>
+    <button onclick="checkDBVersion()">Check DB Version</button>
+    <pre id="versionOutput">Click button to check...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Current Customers in Database</h2>
+    <button onclick="loadCustomers()">Load All Customers</button>
+    <div id="customersOutput">Click button to load...</div>
+  </div>
+
+  <div class="section">
+    <h2>Database Actions</h2>
+    <button class="danger" onclick="resetDatabase()">🗑️ Delete Database (Full Reset)</button>
+    <button class="success" onclick="addCreditToExisting()">💰 Add Credit to Existing Customers</button>
+    <pre id="actionOutput">No actions taken yet...</pre>
+  </div>
+
+  <div class="section">
+    <h2>Instructions</h2>
+    <ol>
+      <li><strong>Check DB Version</strong>: Should be version 13 (latest)</li>
+      <li><strong>Load Customers</strong>: See current credit_balance values</li>
+      <li><strong>If credit_balance is 0 for all</strong>: Click "Add Credit to Existing Customers"</li>
+      <li><strong>Or Full Reset</strong>: Delete database and reload the app (will re-seed with correct data)</li>
+    </ol>
+  </div>
+
+  <script type="module">
+    import { db } from '@pulse/core-logic';
+    
+    window.db = db;
+    window.checkDBVersion = async () => {
+      const output = document.getElementById('versionOutput');
+      try {
+        const version = db.verno;
+        output.textContent = `Current Database Version: ${version}\nExpected: 13 (includes credit_balance support)\n\n`;
+        
+        if (version < 12) {
+          output.textContent += '⚠️ WARNING: Database version is too old!\nCredit balance feature requires version 12+.\n\nAction: Delete database and reload app.';
+        } else {
+          output.textContent += '✅ Database version is correct!';
+        }
+      } catch (error) {
+        output.textContent = `Error: ${error.message}`;
+      }
+    };
+
+    window.loadCustomers = async () => {
+      const output = document.getElementById('customersOutput');
+      try {
+        const customers = await db.customers.toArray();
+        
+        if (customers.length === 0) {
+          output.innerHTML = '<p style="color: orange;">No customers found in database. Add some customers first!</p>';
+          return;
+        }
+
+        let html = `<p>Found ${customers.length} customers:</p>`;
+        
+        customers.forEach(c => {
+          const hasCredit = (c.credit_balance || 0) > 0;
+          html += `
+            <div class="customer-card">
+              <strong>${c.name}</strong> (${c.email || 'no email'})<br>
+              Phone: ${c.phone || 'no phone'}<br>
+              Credit Balance: <span class="${hasCredit ? 'credit' : 'no-credit'}">${(c.credit_balance || 0).toFixed(2)} BGN</span><br>
+              Loyalty Points: ${c.loyalty_points || c.points || 0}<br>
+              Tier: ${c.tier || 'bronze'}<br>
+              Total Spent: ${(c.total_spent || 0).toFixed(2)} BGN
+            </div>
+          `;
+        });
+
+        output.innerHTML = html;
+      } catch (error) {
+        output.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+      }
+    };
+
+    window.resetDatabase = async () => {
+      const output = document.getElementById('actionOutput');
+      
+      if (!confirm('⚠️ This will DELETE the entire database!\n\nAll data will be lost and re-seeded when you reload the app.\n\nAre you sure?')) {
+        return;
+      }
+
+      try {
+        output.textContent = 'Deleting database...';
+        await db.delete();
+        output.textContent = '✅ Database deleted successfully!\n\n🔄 Please reload the page (F5) to re-seed with correct data.';
+      } catch (error) {
+        output.textContent = `❌ Error: ${error.message}`;
+      }
+    };
+
+    window.addCreditToExisting = async () => {
+      const output = document.getElementById('actionOutput');
+      
+      try {
+        output.textContent = 'Adding credit to existing customers...\n\n';
+        
+        const updates = [
+          { name: 'John Doe', credit: 50.00 },
+          { name: 'Jane Smith', credit: 100.00 },
+          { name: 'Ali Yılmaz', credit: 25.00 },
+          { name: 'Ayşe Demir', credit: 60.00 },
+          { name: 'Mehmet Kaya', credit: 0 }
+        ];
+
+        let log = '';
+        
+        for (const update of updates) {
+          const customers = await db.customers.where('name').equals(update.name).toArray();
+          
+          if (customers.length > 0) {
+            const customer = customers[0];
+            await db.customers.update(customer.id, {
+              credit_balance: update.credit,
+              updated_at: new Date().toISOString()
+            });
+            log += `✅ Updated ${update.name}: ${update.credit} BGN\n`;
+          } else {
+            log += `⚠️ Customer not found: ${update.name}\n`;
+          }
+        }
+
+        output.textContent = log + '\n🎉 Done! Now test the Store Credit feature in POS.';
+        
+        // Reload customers display
+        await window.loadCustomers();
+      } catch (error) {
+        output.textContent = `❌ Error: ${error.message}`;
+      }
+    };
+
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      checkDBVersion();
+      loadCustomers();
+    });
+  </script>
+</body>
+</html>

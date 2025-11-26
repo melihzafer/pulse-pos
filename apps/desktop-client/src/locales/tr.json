@@ -10,22 +10,125 @@
     "actions": "İşlemler",
     "name": "İsim",
     "status": "Durum",
-    "deleteConfirm": "Bu öğeyi silmek istediğinizden emin misiniz?"
+    "deleteConfirm": "Bu öğeyi silmek istediğinizden emin misiniz?",
+    "confirm": "Onayla",
+    "ok": "Tamam",
+    "yes": "Evet",
+    "no": "Hayır",
+    "amount": "Miktar",
+    "reason": "Sebep",
+    "noReason": "Sebep belirtilmedi"
   },
   "sidebar": {
     "pos": "Satış",
     "inventory": "Stok",
+    "promotions": "Promosyonlar",
     "dashboard": "Panel",
+    "analytics": "Analitik",
     "settings": "Ayarlar",
     "toggleTheme": "Temayı Değiştir",
     "logout": "Çıkış"
+  },
+  "analytics": {
+    "title": "Analitik ve Raporlar",
+    "subtitle": "İşletme performansınızı ve analizlerinizi takip edin",
+    "tabs": {
+      "overview": "Genel Bakış",
+      "products": "Ürünler",
+      "performance": "Performans",
+      "inventory": "Envanter"
+    },
+    "revenueTrends": "Gelir Trendleri",
+    "topProducts": "En Çok Satan Ürünler",
+    "lowStockAlerts": "Düşük Stok Uyarıları",
+    "profitMargin": "Kar Marjı Analizi",
+    "salesHeatmap": "Satış Isı Haritası",
+    "cashierPerformance": "Kasiyer Performansı",
+    "dateRange": "Tarih Aralığı",
+    "period": {
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "thisWeek": "Bu Hafta",
+      "lastWeek": "Geçen Hafta",
+      "thisMonth": "Bu Ay",
+      "lastMonth": "Geçen Ay",
+      "custom": "Özel Aralık",
+      "daily": "Günlük",
+      "weekly": "Haftalık",
+      "monthly": "Aylık",
+      "yearly": "Yıllık"
+    },
+    "metrics": {
+      "totalRevenue": "Toplam Gelir",
+      "totalSales": "Toplam Satış",
+      "avgTransaction": "Ort. İşlem",
+      "itemsSold": "Satılan Ürünler",
+      "profit": "Kar",
+      "growth": "Büyüme"
+    },
+    "topProductsBy": {
+      "volume": "Miktara Göre",
+      "revenue": "Gelire Göre",
+      "profit": "Kar Marjına Göre"
+    },
+    "stockStatus": {
+      "critical": "Kritik",
+      "warning": "Uyarı",
+      "ok": "Tamam",
+      "outOfStock": "Stokta Yok",
+      "lowStock": "Düşük Stok",
+      "reorder": "Yeniden Sipariş"
+    },
+    "export": {
+      "pdf": "PDF İndir",
+      "excel": "Excel İndir",
+      "print": "Raporu Yazdır"
+    },
+    "noData": "Seçilen dönem için veri yok"
+  },
+  "shift": {
+    "management": "Vardiya Yönetimi",
+    "start": "Vardiya Başlat",
+    "enterStartCash": "Başlangıç Nakit Miktarını Girin",
+    "openShift": "Vardiya Aç",
+    "startTime": "Başlangıç Saati",
+    "startCash": "Başlangıç Nakit",
+    "payIn": "Nakit Girişi",
+    "payOut": "Ödeme",
+    "transactions": "İşlemler",
+    "closeShift": "Vardiya Kapat",
+    "countCashDrawer": "Kasa Sayımı",
+    "messages": {
+      "started": "Vardiya başlatıldı",
+      "startError": "Vardiya başlatılamadı",
+      "invalidAmount": "Geçersiz bitiş nakit miktarı",
+      "closed": "Vardiya başarıyla kapatıldı",
+      "closedWithDifference": "Vardiya farkla kapatıldı:",
+      "closeError": "Vardiya kapatılamadı",
+      "cashInRecorded": "Nakit girişi kaydedildi",
+      "cashOutRecorded": "Ödeme kaydedildi",
+      "transactionError": "İşlem kaydedilemedi",
+      "amountInvalid": "Geçersiz miktar",
+      "reasonRequired": "Sebep gereklidir"
+    }
   },
   "pos": {
     "searchPlaceholder": "Ürün ara (F1)...",
     "searchButton": "Ürün Ara (F1)",
     "stock": "Stok",
     "noProducts": "Ürün bulunamadı",
-    "addToCart": "Sepete Ekle"
+    "addToCart": "Sepete Ekle",
+    "productNotFound": "Ürün bulunamadı",
+    "allProducts": "Tüm Ürünler",
+    "favorites": "Favoriler",
+    "addToFavorites": "Favorilere ekle",
+    "removeFromFavorites": "Favorilerden çıkar",
+    "addedToFavorites": "{{name}} favorilere eklendi",
+    "removedFromFavorites": "{{name}} favorilerden çıkarıldı",
+    "favoriteError": "Favoriler güncellenemedi",
+    "parkedSales": "Bekleyen Satışlar",
+    "noParkedSales": "Bekleyen satış yok",
+    "parkOrder": "Siparişi Park Et"
   },
   "cart": {
     "title": "Sepet",
@@ -37,7 +140,8 @@
     "card": "Kart",
     "total": "Toplam",
     "payNow": "Öde (F5)",
-    "clearConfirm": "Sepeti temizlemek istediğinizden emin misiniz?"
+    "clearConfirm": "Sepeti temizlemek istediğinizden emin misiniz?",
+    "promoApplied": "Promosyon Uygulandı"
   },
   "payment": {
     "title": "Ödemeyi Tamamla",
@@ -54,6 +158,35 @@
     "successNoPrint": "Ödeme başarılı, ancak yazdırma başarısız.",
     "error": "Ödeme başarısız. Lütfen tekrar deneyin.",
     "insufficient": "Yetersiz tutar"
+  },
+  "receipt": {
+    "paymentSuccessful": "Ödeme Başarılı",
+    "thankYou": "Satın alımınız için teşekkür ederiz!",
+    "print": "Fiş Yazdır",
+    "download": "İndir",
+    "downloaded": "Fiş PDF indirildi",
+    "downloadError": "Fiş indirilemedi",
+    "email": "Fiş Gönder",
+    "qr": "QR Kod",
+    "install": "Yükle",
+    "installed": "Yüklendi",
+    "installTooltip": "Mali makbuz oluştur ve kaydet",
+    "fiscalGenerated": "Mali makbuz {{number}} yüklendi",
+    "installError": "Mali makbuz yüklenemedi",
+    "newSale": "Yeni Satış",
+    "printing": "Fiş yazdırılıyor...",
+    "emailSent": "Fiş {{email}} adresine gönderildi"
+  },
+  "customerDisplay": {
+    "display": "Ekran",
+    "welcome": "Pulse Mağazasına Hoş Geldiniz",
+    "nextCustomer": "Sıradaki müşteri, lütfen!",
+    "thankYou": "Teşekkür Ederiz!",
+    "changeDue": "Para Üstü",
+    "yourCart": "Sepetiniz",
+    "totalToPay": "Ödenecek Toplam",
+    "subtotal": "Ara Toplam",
+    "tax": "KDV (%10)"
   },
   "inventory": {
     "title": "Stok Yönetimi",
@@ -100,6 +233,97 @@
     "recentSales": "Son Satışlar",
     "noSales": "Bugün satış yok"
   },
+  "analytics": {
+    "title": "Analitik ve Raporlar",
+    "subtitle": "İş analizleri ve performans metrikleri",
+    "tabs": {
+      "overview": "Genel Bakış",
+      "products": "Ürün Analizi",
+      "performance": "Performans",
+      "inventory": "Stok Uyarıları"
+    },
+    "dateRange": {
+      "today": "Bugün",
+      "yesterday": "Dün",
+      "last7Days": "Son 7 Gün",
+      "last30Days": "Son 30 Gün",
+      "thisWeek": "Bu Hafta",
+      "thisMonth": "Bu Ay",
+      "thisYear": "Bu Yıl"
+    },
+    "export": {
+      "title": "Dışa Aktar",
+      "pdf": "PDF olarak Dışa Aktar",
+      "pdfDescription": "Yazdırılabilir rapor",
+      "excel": "Excel olarak Dışa Aktar",
+      "excelDescription": "Detaylı veri sayfaları"
+    },
+    "revenueTrends": {
+      "title": "Gelir Trendleri",
+      "subtitle": "Zaman içinde satış performansı",
+      "totalRevenue": "Toplam Gelir",
+      "transactions": "İşlemler",
+      "avgTransaction": "Ort. İşlem",
+      "byPaymentMethod": "Ödeme Yöntemine Göre Gelir",
+      "line": "Çizgi",
+      "bar": "Çubuk"
+    },
+    "topProducts": {
+      "title": "En İyi Ürünler",
+      "byVolume": "Satış Hacmine Göre En İyi Ürünler",
+      "byRevenue": "Ciro'ya Göre En İyi Ürünler",
+      "byProfit": "Kar Marjına Göre En İyi Ürünler",
+      "subtitle": "Envanterinizdeki en iyi performans gösteren ürünler",
+      "volume": "Hacim",
+      "revenue": "Ciro",
+      "profit": "Kar",
+      "product": "Ürün",
+      "qtySold": "Satılan Adet",
+      "margin": "Marj",
+      "noData": "Seçili dönem için satış verisi yok"
+    },
+    "profitMargin": {
+      "title": "Kar Marjı Analizi",
+      "subtitle": "Ürünlerinizin karlılığını analiz edin",
+      "totalProfit": "Toplam Kar",
+      "totalRevenue": "Toplam Gelir",
+      "overallMargin": "Genel Marj",
+      "profitDistribution": "Kar Dağılımı",
+      "lowMarginProducts": "Düşük Marjlı Ürünler (<15%)",
+      "tip": "İpucu: Bu ürünler için fiyatlandırmayı gözden geçirmeyi veya tedarikçi maliyetlerini müzakere etmeyi düşünün.",
+      "allHealthy": "Tüm ürünlerin sağlıklı kar marjları var!"
+    },
+    "salesHeatmap": {
+      "title": "Satış Haritası",
+      "subtitle": "Personel optimizasyonu için yoğun saatleri belirleyin",
+      "less": "Az",
+      "more": "Çok",
+      "peakActivity": "Yoğun aktivite:",
+      "salesInHour": "tek saatte satış"
+    },
+    "cashierPerformance": {
+      "title": "Kasiyer Performansı",
+      "subtitle": "Çalışan başına satış metrikleri",
+      "totalRevenue": "Toplam Gelir",
+      "transactions": "İşlemler",
+      "avgTransaction": "Ort. İşlem",
+      "itemsPerSale": "Ürün/Satış",
+      "cashier": "Kasiyer",
+      "unknownUser": "Bilinmeyen Kullanıcı",
+      "noData": "Seçili dönem için satış verisi yok"
+    },
+    "lowStockAlerts": {
+      "title": "Düşük Stok Uyarıları",
+      "subtitle": "Dikkat gerektiren ürünler",
+      "critical": "Kritik",
+      "warning": "Uyarı",
+      "low": "Düşük",
+      "minLevel": "Min seviye:",
+      "units": "adet",
+      "inStock": "stokta",
+      "allStocked": "Tüm ürünler yeterli stokta!"
+    }
+  },
   "settings": {
     "printer": {
       "title": "Yazıcı Yapılandırması",
@@ -138,6 +362,136 @@
       "title": "Fiş Ayarları",
       "header": "Fiş Başlığı",
       "taxRate": "Vergi Oranı"
+    }
+  },
+  "promotions": {
+    "title": "Promosyonlar",
+    "new": "Yeni Promosyon",
+    "create": "Promosyon Oluştur",
+    "name": "Ad",
+    "description": "Açıklama",
+    "descriptionPlaceholder": "Bu promosyon hakkında isteğe bağlı ayrıntılar",
+    "type": "Tür",
+    "types": {
+      "bogo": "X Al Y Kazan (BOGO)",
+      "discount_percent": "Yüzde İndirim",
+      "fixed_amount": "Sabit Tutar İndirimi",
+      "happy_hour": "Mutlu Saat"
+    },
+    "product": "Ürün",
+    "productBarcode": "Ürün Barkodu/SKU",
+    "productBarcodeRequired": "Ürün Barkodu/SKU *",
+    "productBarcodeOptional": "Ürün Barkodu/SKU (isteğe bağlı)",
+    "scanOrType": "Barkod okutun veya yazın",
+    "allProducts": "Tüm ürünler için boş bırakın",
+    "rewardProduct": "Ödül Ürünü (isteğe bağlı)",
+    "sameAsAbove": "Boşsa yukarıdakiyle aynı",
+    "searchInStock": "Stokta ara",
+    "noProductsFound": "Stokta ürün bulunamadı",
+    "typeManually": "Yeni ürünler için barkod numarasını elle girebilirsiniz",
+    "discountDetails": "İndirim Detayları",
+    "buyQty": "Alış Miktarı",
+    "getQty": "Kazanma Miktarı",
+    "discountPercent": "İndirim %",
+    "fixedAmount": "Sabit İndirim Tutarı (BGN)",
+    "quickPresets": "Hızlı İndirim Ön Ayarları",
+    "free": "100% İNDİRİM (ÜCRETSİZ)",
+    "off75": "75% İNDİRİM",
+    "off50": "50% İNDİRİM",
+    "off25": "25% İNDİRİM",
+    "off10": "10% İNDİRİM",
+    "dateRange": "Tarih Aralığı",
+    "startDate": "Başlangıç Tarihi",
+    "endDate": "Bitiş Tarihi",
+    "conditions": "Koşullar ve Kısıtlamalar",
+    "maxUses": "Maksimum Kullanım (isteğe bağlı)",
+    "minPurchase": "Minimum Satın Alma Tutarı (isteğe bağlı)",
+    "daysOfWeek": "Haftanın Günleri",
+    "timeRange": "Zaman Aralığı (isteğe bağlı)",
+    "startTime": "Başlangıç Saati",
+    "endTime": "Bitiş Saati",
+    "cancel": "İptal",
+    "createButton": "Promosyon Oluştur",
+    "status": {
+      "expired": "SÜRESİ DOLDU",
+      "scheduled": "PLANLANMIŞ",
+      "limitReached": "LİMİTE ULAŞILDI",
+      "active": "AKTİF"
+    },
+    "days": {
+      "sun": "Paz",
+      "mon": "Pzt",
+      "tue": "Sal",
+      "wed": "Çar",
+      "thu": "Per",
+      "fri": "Cum",
+      "sat": "Cmt"
+    },
+    "messages": {
+      "nameRequired": "Promosyon adı gereklidir",
+      "productRequired": "Bu promosyon türü için ürün gereklidir",
+      "productNotFound": "Ürün bulunamadı",
+      "created": "Promosyon başarıyla oluşturuldu!",
+      "updated": "Promosyon başarıyla güncellendi!",
+      "deleted": "Promosyon silindi",
+      "deleteConfirm": "Bu promosyonu silmek istediğinizden emin misiniz?"
+    }
+  },
+  "auth": {
+    "welcome": "Pulse POS'a Hoş Geldiniz",
+    "loginPrompt": "Devam etmek için giriş yapın",
+    "username": "Kullanıcı Adı",
+    "enterUsername": "Kullanıcı adınızı girin",
+    "pin": "PIN Kodu",
+    "pinHelp": "4-6 haneli PIN kodu",
+    "signIn": "Giriş Yap",
+    "signingIn": "Giriş yapılıyor...",
+    "usernameRequired": "Kullanıcı adı gereklidir",
+    "pinRequired": "PIN gereklidir",
+    "pinLength": "PIN 4-6 haneli olmalıdır",
+    "pinDigitsOnly": "PIN sadece rakam içermelidir",
+    "invalidCredentials": "Geçersiz kullanıcı adı veya PIN",
+    "loginError": "Giriş başarısız. Lütfen tekrar deneyin.",
+    "loginSuccess": "Giriş başarılı",
+    "contactAdmin": "Yardıma mı ihtiyacınız var? Yöneticinizle iletişime geçin"
+  },
+  "cashiers": {
+    "title": "Kasiyer Yönetimi",
+    "subtitle": "Kasiyer hesaplarını ve izinlerini yönetin",
+    "addNew": "Kasiyer Ekle",
+    "addNewCashier": "Yeni Kasiyer Ekle",
+    "editCashier": "Kasiyer Düzenle",
+    "noCashiers": "Kasiyer bulunamadı",
+    "addFirstCashier": "Başlamak için ilk kasiyerinizi ekleyin",
+    "username": "Kullanıcı Adı",
+    "usernamePlaceholder": "Kullanıcı adı girin",
+    "usernameRequired": "Kullanıcı adı gereklidir",
+    "usernameTaken": "Kullanıcı adı zaten kullanılıyor",
+    "pinCode": "PIN Kodu",
+    "pinRequired": "Yeni kasiyerler için PIN gereklidir",
+    "pinLength": "PIN 4-6 haneli olmalıdır",
+    "pinDigitsOnly": "PIN sadece rakam içermelidir",
+    "pinHelp": "4-6 haneli PIN kodu",
+    "leaveEmptyToKeep": "Mevcut olanı korumak için boş bırakın",
+    "fullName": "Tam Ad",
+    "fullNamePlaceholder": "Tam ad girin",
+    "fullNameRequired": "Tam ad gereklidir",
+    "role": "Rol",
+    "activeStatus": "Aktif (giriş yapabilir)",
+    "active": "Aktif",
+    "inactive": "Aktif Değil",
+    "create": "Oluştur",
+    "createSuccess": "Kasiyer başarıyla oluşturuldu",
+    "updateSuccess": "Kasiyer başarıyla güncellendi",
+    "deleteSuccess": "Kasiyer başarıyla silindi",
+    "deleteConfirm": "Silmek istediğinizden emin misiniz",
+    "loadError": "Kasiyerler yüklenemedi",
+    "saveError": "Kasiyer kaydedilemedi",
+    "deleteError": "Kasiyer silinemedi",
+    "role": {
+      "admin": "Yönetici",
+      "manager": "Müdür",
+      "cashier": "Kasiyer"
     }
   }
 }

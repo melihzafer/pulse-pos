@@ -18,6 +18,7 @@
     "packages/*"
   ],
   "dependencies": {
+    "recharts": "^3.4.1",
     "sonner": "^2.0.7"
   }
 }

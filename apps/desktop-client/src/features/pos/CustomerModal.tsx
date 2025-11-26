@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Search, UserPlus, User } from 'lucide-react';
+import { X, Search, UserPlus, User, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, Customer, useCartStore } from '@pulse/core-logic';
 import { toast } from 'sonner';
@@ -7,9 +7,10 @@ import { toast } from 'sonner';
 interface CustomerModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onViewProfile?: (customerId: string) => void;
 }
 
-export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose }) => {
+export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, onViewProfile }) => {
   const { t } = useTranslation();
   const { setCustomer } = useCartStore();
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,6 +68,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose })
         phone: newCustomer.phone || undefined,
         email: newCustomer.email || undefined,
         points: 0,
+        tier: 'bronze',
+        total_spent: 0,
+        visit_count: 0,
+        tags: [],
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       };
@@ -131,26 +136,42 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose })
                 </button>
 
                 {customers.map((customer) => (
-                  <button
+                  <div
                     key={customer.id}
-                    onClick={() => handleSelectCustomer(customer)}
                     className="w-full p-3 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-slate-800 rounded-xl transition-colors border border-transparent hover:border-gray-200 dark:hover:border-slate-700"
                   >
-                    <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleSelectCustomer(customer)}
+                      className="flex-1 flex items-center gap-3 text-left"
+                    >
                       <div className="w-10 h-10 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center text-gray-500 dark:text-slate-400">
                         <User size={20} />
                       </div>
-                      <div className="text-left">
+                      <div>
                         <p className="font-bold text-gray-900 dark:text-white">{customer.name}</p>
                         <p className="text-sm text-gray-500 dark:text-slate-400">
                           {customer.phone || customer.email || t('customer.noContact')}
                         </p>
                       </div>
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{customer.points} pts</p>
+                      </div>
+                      {onViewProfile && (
+                        <button
+                          onClick={() => {
+                            onViewProfile(customer.id);
+                            onClose();
+                          }}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-lg text-blue-600 dark:text-blue-400 transition-colors"
+                          title={t('customer.viewProfile', 'View Profile')}
+                        >
+                          <Eye size={18} />
+                        </button>
+                      )}
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-blue-600 dark:text-blue-400">{customer.points} pts</p>
-                    </div>
-                  </button>
+                  </div>
                 ))}
                 
                 {customers.length === 0 && searchQuery && (

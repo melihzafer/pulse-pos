@@ -5,10 +5,13 @@ import { PaymentModal } from './PaymentModal';
 import { ReceiptModal } from './ReceiptModal';
 import { ShiftModal } from './ShiftModal';
 import { CustomerModal } from './CustomerModal';
-import { useCartStore, Product, db, PaymentMethod, MarketService } from '@pulse/core-logic';
+import { SellGiftCardModal } from './SellGiftCardModal';
+import { CustomerProfileScreen } from '../customers/CustomerProfileScreen';
+import { useCartStore, useAuthStore, Product, db, PaymentMethod, MarketService, formatCurrency, LoyaltyService } from '@pulse/core-logic';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
-import { Settings, Lock, Monitor } from 'lucide-react';
+import { Monitor, Lock, Settings, Gift } from 'lucide-react';
+import { sendNotification } from '../../utils/notifications';
 
 const marketService = new MarketService();
 
@@ -19,14 +22,20 @@ interface POSScreenProps {
 export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
   const { addToCart, clearCart, getTotal, items, customer } = useCartStore();
+  const { currentCashier } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  const [isGiftCardModalOpen, setIsGiftCardModalOpen] = useState(false);
+  const [viewingCustomerId, setViewingCustomerId] = useState<string | null>(null);
   const [lastChange, setLastChange] = useState(0);
   const [lastTotal, setLastTotal] = useState(0);
+  const [lastSaleId, setLastSaleId] = useState<string | undefined>(undefined);
+  const [lastSaleItems, setLastSaleItems] = useState<typeof items>([]);
+  const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethod>('cash');
   const [enableShifts, setEnableShifts] = useState(true);
 
   useEffect(() => {
@@ -61,19 +70,19 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
 
   // Load products from Dexie
   useEffect(() => {
-    const loadProducts = async () => {
-      try {
-        const allProducts = await db.products.toArray();
-        setProducts(allProducts);
-      } catch (error) {
-        console.error('Failed to load products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadProducts();
   }, []);
+
+  const loadProducts = async () => {
+    try {
+      const allProducts = await db.products.toArray();
+      setProducts(allProducts);
+    } catch (error) {
+      console.error('Failed to load products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -185,8 +194,33 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     return () => channel.close();
   }, [items, getTotal]);
 
-  const handleProductClick = (product: Product) => {
-    addToCart(product, 1);
+  const handleProductClick = async (product: Product) => {
+    try {
+      await addToCart(product, 1);
+    } catch (error) {
+      console.error('Failed to add product to cart:', error);
+      toast.error(t('cart.addError', 'Failed to add product to cart'));
+    }
+  };
+
+  const handleGiftCardSold = (amount: number, cardNumber: string) => {
+    // Create a virtual product for gift card in cart
+    const giftCardProduct: Product = {
+      id: `giftcard-${cardNumber}`,
+      workspace_id: '00000000-0000-0000-0000-000000000000',
+      name: `Gift Card - ${cardNumber}`,
+      barcode: cardNumber,
+      sku: cardNumber,
+      sale_price: amount,
+      cost_price: 0, // No cost for gift card
+      stock_quantity: 1,
+      min_stock_level: 0,
+      is_quick_key: false,
+      age_restricted: false,
+    };
+
+    addToCart(giftCardProduct, 1);
+    toast.success(t('giftCard.addedToCart', { defaultValue: 'Gift card added to cart' }));
   };
 
   const handlePaymentComplete = async (method: PaymentMethod, amountTendered: number, change: number, payments?: { method: PaymentMethod, amount: number }[]) => {
@@ -196,6 +230,20 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
       const currentTotal = getTotal();
       setLastTotal(currentTotal);
       setLastChange(change);
+
+      // Check for High Value Sale
+      const settingsStr = localStorage.getItem('pulse-settings');
+      const settings = settingsStr ? JSON.parse(settingsStr) : {};
+      const highValueThreshold = settings.notifications?.highValueThreshold || 1000;
+
+      if (currentTotal > highValueThreshold) {
+        sendNotification({
+          title: t('notifications.highValueSale', 'High Value Sale'),
+          message: t('notifications.highValueMessage', 'Sale amount: {{amount}}', { amount: formatCurrency(currentTotal) }),
+          type: 'info',
+          category: 'highValueSale'
+        });
+      }
 
       // Broadcast payment success
       const channel = new BroadcastChannel('customer-display');
@@ -226,22 +274,50 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
           cost_snapshot: item.product.cost_price,
           price_snapshot: item.product.sale_price,
           quantity: item.quantity,
+          discount: item.discount,
         })),
       };
 
       // Save to Dexie
-      await db.sales.add(sale);
+      const saleId = await db.sales.add(sale);
+      setLastSaleId(saleId);
+
+      // Process Loyalty
+      if (sale.customer_id) {
+        try {
+          await LoyaltyService.processSale(sale);
+        } catch (error) {
+          console.error('Loyalty processing failed:', error);
+          // Don't block the sale completion for loyalty errors
+        }
+      }
       
       // Update stock
       for (const item of items) {
         const product = await db.products.get(item.product.id);
         if (product) {
+          const newQuantity = product.stock_quantity - item.quantity;
           await db.products.update(item.product.id, {
-            stock_quantity: product.stock_quantity - item.quantity
+            stock_quantity: newQuantity
           });
+
+          // Check Low Stock
+          const lowStockThreshold = settings.notifications?.lowStockThreshold || 5;
+          if (newQuantity <= lowStockThreshold) {
+             sendNotification({
+              title: t('notifications.lowStock', 'Low Stock Alert'),
+              message: t('notifications.lowStockMessage', 'Product {{product}} is low on stock ({{quantity}})', { product: product.name, quantity: newQuantity }),
+              type: 'warning',
+              category: 'lowStock'
+            });
+          }
         }
       }
 
+      // Save items and payment info before clearing cart
+      setLastSaleItems([...items]);
+      setLastPaymentMethod(method);
+      
       toast.success(t('payment.success'));
       setIsPaymentModalOpen(false);
       setIsReceiptModalOpen(true);
@@ -266,21 +342,50 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     );
   }
 
+  // Show customer profile screen
+  if (viewingCustomerId) {
+    return (
+      <CustomerProfileScreen
+        customerId={viewingCustomerId}
+        onBack={() => setViewingCustomerId(null)}
+      />
+    );
+  }
+
   return (
     <div className="flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
       {/* Left Side: Product Grid */}
       <div className="flex-1 flex flex-col min-w-0 max-w-[calc(100%-450px)]">
         {/* Header Bar */}
         <div className="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0">
-          {/* <h1 className="text-xl font-bold text-gray-800 dark:text-white">Pulse POS</h1> */}
+          {/* Cashier Info */}
+          {currentCashier && (
+            <div className="flex items-center gap-2 text-sm">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white font-semibold">
+                {currentCashier.full_name.charAt(0).toUpperCase()}
+              </div>
+              <div>
+                <p className="font-semibold text-gray-900 dark:text-white">{currentCashier.full_name}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{t(`cashiers.role.${currentCashier.role}`, currentCashier.role)}</p>
+              </div>
+            </div>
+          )}
           <div className="flex gap-2">
+            <button
+              onClick={() => setIsGiftCardModalOpen(true)}
+              className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400 flex items-center gap-2"
+              title={t('giftCard.sell', 'Sell Gift Card')}
+            >
+              <Gift size={20} />
+              <span className="text-sm font-medium hidden sm:inline">{t('giftCard.sell', 'Gift Card')}</span>
+            </button>
             <button
               onClick={openCustomerDisplay}
               className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-2"
-              title="Open Customer Display"
+              title={t('customerDisplay.display')}
             >
               <Monitor size={20} />
-              <span className="text-sm font-medium hidden sm:inline">Display</span>
+              <span className="text-sm font-medium hidden sm:inline">{t('customerDisplay.display')}</span>
             </button>
             {enableShifts && (
               <button
@@ -303,14 +408,22 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         </div>
 
         <div className="flex-1 p-4 overflow-hidden px-12">
-          <ProductGrid products={products} onProductClick={handleProductClick} />
+          <ProductGrid 
+            products={products} 
+            onProductClick={handleProductClick}
+            onProductsChange={loadProducts}
+          />
         </div>
       </div>
 
       {/* Right Side: Cart */}
       <div className="w-[500px] top-0 right-0 fixed bg-white h-[100vh] dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col shadow-xl z-10">
         <div className="flex-1 p-4 overflow-hidden">
-          <Cart onPay={() => setIsPaymentModalOpen(true)} products={products} />
+          <Cart 
+            onPay={() => setIsPaymentModalOpen(true)} 
+            products={products}
+            onViewCustomerProfile={(customerId) => setViewingCustomerId(customerId)}
+          />
         </div>
       </div>
 
@@ -326,7 +439,10 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         onClose={() => setIsReceiptModalOpen(false)}
         change={lastChange}
         total={lastTotal}
-        items={items}
+        items={lastSaleItems}
+        saleId={lastSaleId}
+        paymentMethod={lastPaymentMethod}
+        cashierName={currentCashier?.full_name}
         onPrint={() => toast.success(t('receipt.printing'))}
         onEmail={(email) => toast.success(t('receipt.emailSent', { email }))}
       />
@@ -339,6 +455,13 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
       <CustomerModal
         isOpen={isCustomerModalOpen}
         onClose={() => setIsCustomerModalOpen(false)}
+        onViewProfile={(customerId) => setViewingCustomerId(customerId)}
+      />
+
+      <SellGiftCardModal
+        isOpen={isGiftCardModalOpen}
+        onClose={() => setIsGiftCardModalOpen(false)}
+        onSold={handleGiftCardSold}
       />
     </div>
   );

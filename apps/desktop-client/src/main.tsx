@@ -4,6 +4,7 @@ import App from './App.tsx'
 import './index.css'
 import './i18n'
 import './utils/seedData' // Auto-seed database
+import './utils/dbTest' // Database testing utilities
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

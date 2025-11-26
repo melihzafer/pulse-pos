@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { db, Promotion, Product } from '@pulse/core-logic';
-import { Plus, Trash2, Tag } from 'lucide-react';
+import { Plus, Trash2, Tag, Edit2, X, Search, Barcode } from 'lucide-react';
 import { toast } from 'sonner';
 import { generateId } from '@pulse/core-logic/src/utils';
+import { useTranslation } from 'react-i18next';
+import { Alert } from '../../components/Alert';
 
 export const PromotionsScreen: React.FC = () => {
+  const { t } = useTranslation();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isCreating, setIsCreating] = useState(false);
+  const [editingPromo, setEditingPromo] = useState<Promotion | null>(null);
+  const [deleteAlert, setDeleteAlert] = useState<{ isOpen: boolean; promoId?: string; promoName?: string }>({ isOpen: false });
+  
+  // Product search states
+  const [showBuyProductList, setShowBuyProductList] = useState(false);
+  const [showGetProductList, setShowGetProductList] = useState(false);
+  const [buyProductSearch, setBuyProductSearch] = useState('');
+  const [getProductSearch, setGetProductSearch] = useState('');
   
   // Form State
   const [name, setName] = useState('');
@@ -40,12 +51,12 @@ export const PromotionsScreen: React.FC = () => {
 
   const handleCreate = async () => {
     if (!name) {
-      toast.error('Promotion name is required');
+      toast.error(t('promotions.messages.nameRequired'));
       return;
     }
 
     if (promoType === 'bogo' && !buySku) {
-      toast.error('Product is required for BOGO promotion');
+      toast.error(t('promotions.messages.productRequired'));
       return;
     }
 
@@ -56,7 +67,7 @@ export const PromotionsScreen: React.FC = () => {
     if (promoType === 'bogo') {
       const buyProduct = products.find(p => p.barcode === buySku || p.sku === buySku);
       if (!buyProduct) {
-        toast.error('Product not found');
+        toast.error(t('promotions.messages.productNotFound'));
         return;
       }
       
@@ -93,8 +104,8 @@ export const PromotionsScreen: React.FC = () => {
       }
     }
 
-    const newPromo: Promotion = {
-      id: generateId(),
+    const promoData: Promotion = {
+      id: editingPromo ? editingPromo.id : generateId(),
       workspace_id: 'default',
       name,
       description,
@@ -105,29 +116,75 @@ export const PromotionsScreen: React.FC = () => {
       start_date: startDate || undefined,
       end_date: endDate || undefined,
       max_uses: maxUses,
-      times_used: 0,
+      times_used: editingPromo ? editingPromo.times_used : 0,
       min_purchase_amount: minPurchase,
       target_variants: targetProducts.length > 0 ? targetProducts : undefined,
       conditions: (selectedDays.length > 0 || timeStart || timeEnd) ? {
         days_of_week: selectedDays.length > 0 ? selectedDays : undefined,
         time_range: (timeStart || timeEnd) ? { start: timeStart, end: timeEnd } : undefined,
       } : undefined,
-      created_at: new Date().toISOString()
+      created_at: editingPromo ? editingPromo.created_at : new Date().toISOString()
     };
 
-    await db.promotions.add(newPromo);
-    toast.success('Promotion created successfully!');
+    if (editingPromo) {
+      await db.promotions.update(editingPromo.id, promoData);
+      toast.success(t('promotions.messages.updated'));
+      setEditingPromo(null);
+    } else {
+      await db.promotions.add(promoData);
+      toast.success(t('promotions.messages.created'));
+    }
+    
     setIsCreating(false);
     loadData();
     resetForm();
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this promotion?')) {
-      await db.promotions.delete(id);
-      toast.success('Promotion deleted');
+  const handleEdit = (promo: Promotion) => {
+    setEditingPromo(promo);
+    setIsCreating(true);
+    setName(promo.name);
+    setDescription(promo.description || '');
+    setPromoType(promo.type);
+    
+    // Load rules based on type
+    if (promo.type === 'bogo') {
+      setBuyQty(promo.rules.buy_qty || 1);
+      setGetQty(promo.rules.get_qty || 1);
+      setDiscountPercent(promo.rules.discount_percent || 100);
+      if (promo.rules.product_id) {
+        const product = products.find(p => p.id === promo.rules.product_id);
+        if (product) setBuySku(product.barcode || product.sku || '');
+      }
+    } else if (promo.type === 'discount_percent') {
+      setDiscountPercent(promo.rules.discount_percent || 0);
+    } else if (promo.type === 'fixed_amount') {
+      setFixedAmount(promo.rules.fixed_amount || 0);
+    } else if (promo.type === 'happy_hour') {
+      setDiscountPercent(promo.rules.discount_percent || 0);
+    }
+    
+    // Load conditions
+    setStartDate(promo.start_date ? promo.start_date.split('T')[0] : '');
+    setEndDate(promo.end_date ? promo.end_date.split('T')[0] : '');
+    setMaxUses(promo.max_uses);
+    setMinPurchase(promo.min_purchase_amount);
+    setSelectedDays(promo.conditions?.days_of_week || []);
+    setTimeStart(promo.conditions?.time_range?.start || '');
+    setTimeEnd(promo.conditions?.time_range?.end || '');
+  };
+
+  const handleDeleteConfirm = (promoId: string, promoName: string) => {
+    setDeleteAlert({ isOpen: true, promoId, promoName });
+  };
+
+  const handleDelete = async () => {
+    if (deleteAlert.promoId) {
+      await db.promotions.delete(deleteAlert.promoId);
+      toast.success(t('promotions.messages.deleted'));
       loadData();
     }
+    setDeleteAlert({ isOpen: false });
   };
 
   const resetForm = () => {
@@ -147,6 +204,11 @@ export const PromotionsScreen: React.FC = () => {
     setSelectedDays([]);
     setTimeStart('');
     setTimeEnd('');
+    setEditingPromo(null);
+    setBuyProductSearch('');
+    setGetProductSearch('');
+    setShowBuyProductList(false);
+    setShowGetProductList(false);
   };
 
   const getPromoStatusBadge = (promo: Promotion) => {
@@ -155,20 +217,20 @@ export const PromotionsScreen: React.FC = () => {
     const end = promo.end_date ? new Date(promo.end_date) : null;
 
     if (end && end < now) {
-      return <span className="bg-gray-400 text-white text-xs px-2 py-0.5 rounded-full">EXPIRED</span>;
+      return <span className="bg-gray-400 text-white text-xs px-2 py-0.5 rounded-full">{t('promotions.status.expired')}</span>;
     }
     if (start && start > now) {
-      return <span className="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">SCHEDULED</span>;
+      return <span className="bg-yellow-500 text-white text-xs px-2 py-0.5 rounded-full">{t('promotions.status.scheduled')}</span>;
     }
     if (promo.max_uses && promo.times_used >= promo.max_uses) {
-      return <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">LIMIT REACHED</span>;
+      return <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{t('promotions.status.limitReached')}</span>;
     }
-    return <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">ACTIVE</span>;
+    return <span className="bg-green-500 text-white text-xs px-2 py-0.5 rounded-full">{t('promotions.status.active')}</span>;
   };
 
   const getDayName = (day: number) => {
-    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    return days[day];
+    const days = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    return t(`promotions.days.${days[day]}`);
   };
 
   const toggleDay = (day: number) => {
@@ -182,26 +244,36 @@ export const PromotionsScreen: React.FC = () => {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center gap-2">
           <Tag className="text-blue-500" />
-          Promotions
+          {t('promotions.title')}
         </h1>
         <button
           onClick={() => setIsCreating(true)}
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors"
         >
           <Plus size={20} />
-          New Promotion
+          {t('promotions.new')}
         </button>
       </div>
 
       {isCreating && (
         <div className="bg-white dark:bg-slate-800 p-6 rounded-xl shadow-sm mb-6 border border-gray-200 dark:border-slate-700 max-h-[80vh] overflow-y-auto">
-          <h2 className="text-lg font-semibold mb-4 dark:text-white">Create Promotion</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold dark:text-white">
+              {editingPromo ? t('promotions.edit') : t('promotions.create')}
+            </h2>
+            <button
+              onClick={() => { setIsCreating(false); resetForm(); }}
+              className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+            >
+              <X size={24} />
+            </button>
+          </div>
           
           {/* Basic Info */}
           <div className="space-y-4 mb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Name *</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.name')} *</label>
                 <input
                   type="text"
                   value={name}
@@ -211,27 +283,27 @@ export const PromotionsScreen: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.type')}</label>
                 <select
                   value={promoType}
                   onChange={e => setPromoType(e.target.value as any)}
                   className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                 >
-                  <option value="bogo">Buy X Get Y (BOGO)</option>
-                  <option value="discount_percent">Percentage Discount</option>
-                  <option value="fixed_amount">Fixed Amount Off</option>
-                  <option value="happy_hour">Happy Hour</option>
+                  <option value="bogo">{t('promotions.types.bogo')}</option>
+                  <option value="discount_percent">{t('promotions.types.discount_percent')}</option>
+                  <option value="fixed_amount">{t('promotions.types.fixed_amount')}</option>
+                  <option value="happy_hour">{t('promotions.types.happy_hour')}</option>
                 </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.description')}</label>
               <textarea
                 value={description}
                 onChange={e => setDescription(e.target.value)}
                 className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                placeholder="Optional details about this promotion"
+                placeholder={t('promotions.descriptionPlaceholder')}
                 rows={2}
               />
             </div>
@@ -239,30 +311,167 @@ export const PromotionsScreen: React.FC = () => {
 
           {/* Product Selection */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Product</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('promotions.product')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                  {promoType === 'bogo' ? 'Product Barcode/SKU *' : 'Product Barcode/SKU (optional)'}
+                  {promoType === 'bogo' ? t('promotions.productBarcodeRequired') : t('promotions.productBarcodeOptional')}
                 </label>
-                <input
-                  type="text"
-                  value={buySku}
-                  onChange={e => setBuySku(e.target.value)}
-                  className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                  placeholder={promoType === 'bogo' ? 'Scan or type barcode' : 'Leave empty for all products'}
-                />
+                
+                {/* Barcode Input with Search Toggle */}
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <input
+                      type="text"
+                      value={buySku}
+                      onChange={e => {
+                        setBuySku(e.target.value);
+                        setBuyProductSearch(e.target.value);
+                      }}
+                      onFocus={() => setShowBuyProductList(true)}
+                      className="w-full pl-10 pr-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                      placeholder={promoType === 'bogo' ? t('promotions.scanOrType') : t('promotions.allProducts')}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowBuyProductList(!showBuyProductList)}
+                    className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                    title={t('promotions.searchInStock')}
+                  >
+                    <Search size={18} />
+                  </button>
+                </div>
+
+                {/* Product Search Dropdown */}
+                {showBuyProductList && (
+                  <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-auto">
+                    {products
+                      .filter(p => 
+                        !buyProductSearch || 
+                        p.name.toLowerCase().includes(buyProductSearch.toLowerCase()) ||
+                        p.barcode?.toLowerCase().includes(buyProductSearch.toLowerCase()) ||
+                        p.sku?.toLowerCase().includes(buyProductSearch.toLowerCase())
+                      )
+                      .slice(0, 10)
+                      .map(product => (
+                        <button
+                          key={product.id}
+                          type="button"
+                          onClick={() => {
+                            setBuySku(product.barcode || product.sku || '');
+                            setBuyProductSearch(product.name);
+                            setShowBuyProductList(false);
+                          }}
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="font-medium text-gray-900 dark:text-white">{product.name}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {product.barcode || product.sku} • {product.sale_price.toFixed(2)} BGN
+                            </div>
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                            Stok: {product.stock_quantity}
+                          </div>
+                        </button>
+                      ))}
+                    {products.filter(p => 
+                      !buyProductSearch || 
+                      p.name.toLowerCase().includes(buyProductSearch.toLowerCase()) ||
+                      p.barcode?.toLowerCase().includes(buyProductSearch.toLowerCase()) ||
+                      p.sku?.toLowerCase().includes(buyProductSearch.toLowerCase())
+                    ).length === 0 && (
+                      <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                        {t('promotions.noProductsFound')}
+                        <div className="mt-2 text-xs">
+                          {t('promotions.typeManually')}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
+              
               {promoType === 'bogo' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Reward Product (optional)</label>
-                  <input
-                    type="text"
-                    value={getSku}
-                    onChange={e => setGetSku(e.target.value)}
-                    className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
-                    placeholder="Same as above if empty"
-                  />
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.rewardProduct')}</label>
+                  
+                  {/* Get Product Input with Search */}
+                  <div className="flex gap-2">
+                    <div className="flex-1 relative">
+                      <Barcode className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                      <input
+                        type="text"
+                        value={getSku}
+                        onChange={e => {
+                          setGetSku(e.target.value);
+                          setGetProductSearch(e.target.value);
+                        }}
+                        onFocus={() => setShowGetProductList(true)}
+                        className="w-full pl-10 pr-3 py-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                        placeholder={t('promotions.sameAsAbove')}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowGetProductList(!showGetProductList)}
+                      className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      title={t('promotions.searchInStock')}
+                    >
+                      <Search size={18} />
+                    </button>
+                  </div>
+
+                  {/* Get Product Search Dropdown */}
+                  {showGetProductList && (
+                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-700 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg max-h-64 overflow-auto">
+                      {products
+                        .filter(p => 
+                          !getProductSearch || 
+                          p.name.toLowerCase().includes(getProductSearch.toLowerCase()) ||
+                          p.barcode?.toLowerCase().includes(getProductSearch.toLowerCase()) ||
+                          p.sku?.toLowerCase().includes(getProductSearch.toLowerCase())
+                        )
+                        .slice(0, 10)
+                        .map(product => (
+                          <button
+                            key={product.id}
+                            type="button"
+                            onClick={() => {
+                              setGetSku(product.barcode || product.sku || '');
+                              setGetProductSearch(product.name);
+                              setShowGetProductList(false);
+                            }}
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 dark:hover:bg-slate-600 flex items-center justify-between"
+                          >
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-white">{product.name}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {product.barcode || product.sku} • {product.sale_price.toFixed(2)} BGN
+                              </div>
+                            </div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              Stok: {product.stock_quantity}
+                            </div>
+                          </button>
+                        ))}
+                      {products.filter(p => 
+                        !getProductSearch || 
+                        p.name.toLowerCase().includes(getProductSearch.toLowerCase()) ||
+                        p.barcode?.toLowerCase().includes(getProductSearch.toLowerCase()) ||
+                        p.sku?.toLowerCase().includes(getProductSearch.toLowerCase())
+                      ).length === 0 && (
+                        <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                          {t('promotions.noProductsFound')}
+                          <div className="mt-2 text-xs">
+                            {t('promotions.typeManually')}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -270,12 +479,12 @@ export const PromotionsScreen: React.FC = () => {
 
           {/* Discount Configuration */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Discount Details</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('promotions.discountDetails')}</h3>
             
             {promoType === 'bogo' && (
               <div className="grid grid-cols-3 gap-4 mb-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Buy Qty</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.buyQty')}</label>
                   <input
                     type="number"
                     value={buyQty}
@@ -285,7 +494,7 @@ export const PromotionsScreen: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Get Qty</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.getQty')}</label>
                   <input
                     type="number"
                     value={getQty}
@@ -295,7 +504,7 @@ export const PromotionsScreen: React.FC = () => {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Discount %</label>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.discountPercent')}</label>
                   <input
                     type="number"
                     value={discountPercent}
@@ -310,7 +519,7 @@ export const PromotionsScreen: React.FC = () => {
 
             {(promoType === 'discount_percent' || promoType === 'happy_hour') && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Discount %</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.discountPercent')}</label>
                 <input
                   type="number"
                   value={discountPercent}
@@ -324,7 +533,7 @@ export const PromotionsScreen: React.FC = () => {
 
             {promoType === 'fixed_amount' && (
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Fixed Amount Off (BGN)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.fixedAmount')}</label>
                 <input
                   type="number"
                   value={fixedAmount}
@@ -337,22 +546,22 @@ export const PromotionsScreen: React.FC = () => {
             )}
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Quick Discount Presets</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('promotions.quickPresets')}</label>
               <div className="flex gap-2 flex-wrap">
                 <button type="button" onClick={() => setDiscountPercent(100)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${discountPercent === 100 ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'}`}>
-                  100% OFF (FREE)
+                  {t('promotions.free')}
                 </button>
                 <button type="button" onClick={() => setDiscountPercent(75)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${discountPercent === 75 ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'}`}>
-                  75% OFF
+                  {t('promotions.off75')}
                 </button>
                 <button type="button" onClick={() => setDiscountPercent(50)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${discountPercent === 50 ? 'bg-purple-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'}`}>
-                  50% OFF
+                  {t('promotions.off50')}
                 </button>
                 <button type="button" onClick={() => setDiscountPercent(25)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${discountPercent === 25 ? 'bg-orange-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'}`}>
-                  25% OFF
+                  {t('promotions.off25')}
                 </button>
                 <button type="button" onClick={() => setDiscountPercent(10)} className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${discountPercent === 10 ? 'bg-yellow-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300 dark:bg-slate-700 dark:text-gray-300 dark:hover:bg-slate-600'}`}>
-                  10% OFF
+                  {t('promotions.off10')}
                 </button>
               </div>
             </div>
@@ -360,10 +569,10 @@ export const PromotionsScreen: React.FC = () => {
 
           {/* Date Range */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Validity Period</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('promotions.dateRange')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Start Date & Time</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.startDate')}</label>
                 <input
                   type="datetime-local"
                   value={startDate}
@@ -372,7 +581,7 @@ export const PromotionsScreen: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">End Date & Time</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.endDate')}</label>
                 <input
                   type="datetime-local"
                   value={endDate}
@@ -385,10 +594,10 @@ export const PromotionsScreen: React.FC = () => {
 
           {/* Conditions */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Conditions (Optional)</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('promotions.conditions')}</h3>
             
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Active Days</label>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">{t('promotions.daysOfWeek')}</label>
               <div className="flex gap-2 flex-wrap">
                 {[0, 1, 2, 3, 4, 5, 6].map(day => (
                   <button
@@ -410,7 +619,7 @@ export const PromotionsScreen: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time Start (HH:MM)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.startTime')}</label>
                 <input
                   type="time"
                   value={timeStart}
@@ -419,7 +628,7 @@ export const PromotionsScreen: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Time End (HH:MM)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.endTime')}</label>
                 <input
                   type="time"
                   value={timeEnd}
@@ -432,10 +641,10 @@ export const PromotionsScreen: React.FC = () => {
 
           {/* Limits */}
           <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Limits (Optional)</h3>
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{t('promotions.conditions')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Min Purchase Amount (BGN)</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.minPurchase')}</label>
                 <input
                   type="number"
                   value={minPurchase || ''}
@@ -447,7 +656,7 @@ export const PromotionsScreen: React.FC = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Max Uses</label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.maxUses')}</label>
                 <input
                   type="number"
                   value={maxUses || ''}
@@ -463,15 +672,15 @@ export const PromotionsScreen: React.FC = () => {
           <div className="flex justify-end gap-2 pt-4 border-t dark:border-slate-700">
             <button
               onClick={() => { setIsCreating(false); resetForm(); }}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg dark:text-gray-300 dark:hover:bg-slate-700"
+              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg dark:text-gray-300 dark:hover:bg-slate-700 transition-colors"
             >
-              Cancel
+              {t('promotions.cancel')}
             </button>
             <button
               onClick={handleCreate}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Save Promotion
+              {editingPromo ? t('common.save') : t('promotions.createButton')}
             </button>
           </div>
         </div>
@@ -484,15 +693,25 @@ export const PromotionsScreen: React.FC = () => {
           const daysLeft = hasExpiry ? Math.ceil((new Date(promo.end_date!).getTime() - now.getTime()) / (1000 * 60 * 60 * 24)) : null;
           
           return (
-            <div key={promo.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700">
+            <div key={promo.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 hover:shadow-md transition-all">
               <div className="flex justify-between items-start mb-2">
                 <h3 className="font-semibold text-lg dark:text-white flex-1">{promo.name}</h3>
-                <button
-                  onClick={() => handleDelete(promo.id)}
-                  className="text-red-500 hover:bg-red-50 p-2 rounded-lg dark:hover:bg-red-900/20 flex-shrink-0"
-                >
-                  <Trash2 size={18} />
-                </button>
+                <div className="flex gap-1 flex-shrink-0">
+                  <button
+                    onClick={() => handleEdit(promo)}
+                    className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 p-2 rounded-lg transition-colors"
+                    title={t('common.edit')}
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDeleteConfirm(promo.id, promo.name)}
+                    className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition-colors"
+                    title={t('common.delete')}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
               </div>
               
               {promo.description && (
@@ -559,6 +778,17 @@ export const PromotionsScreen: React.FC = () => {
           </div>
         )}
       </div>
+
+      <Alert
+        isOpen={deleteAlert.isOpen}
+        onClose={() => setDeleteAlert({ isOpen: false })}
+        onConfirm={handleDelete}
+        title={t('common.delete')}
+        message={t('promotions.messages.deleteConfirm') + (deleteAlert.promoName ? ` "${deleteAlert.promoName}"?` : '')}
+        type="confirm"
+        confirmText={t('common.yes')}
+        cancelText={t('common.no')}
+      />
     </div>
   );
 };

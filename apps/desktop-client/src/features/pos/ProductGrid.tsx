@@ -1,18 +1,20 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Star, LayoutGrid, Tag } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { Product, MarketService, Promotion } from '@pulse/core-logic';
+import { Product, MarketService, Promotion, db } from '@pulse/core-logic';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 
 const marketService = new MarketService();
 
 interface ProductGridProps {
   products: Product[];
   onProductClick: (product: Product) => void;
+  onProductsChange?: () => void;
 }
 
-export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductClick }) => {
+export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductClick, onProductsChange }) => {
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
@@ -20,6 +22,30 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
   const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleFavorite = async (e: React.MouseEvent, product: Product) => {
+    e.stopPropagation(); // Prevent triggering product click
+    
+    try {
+      await db.products.update(product.id, {
+        is_quick_key: !product.is_quick_key,
+      });
+      
+      if (!product.is_quick_key) {
+        toast.success(t('pos.addedToFavorites', { name: product.name }));
+      } else {
+        toast.success(t('pos.removedFromFavorites', { name: product.name }));
+      }
+      
+      // Trigger refresh if callback provided
+      if (onProductsChange) {
+        onProductsChange();
+      }
+    } catch (error) {
+      console.error('Failed to toggle favorite:', error);
+      toast.error(t('pos.favoriteError'));
+    }
+  };
 
   // Fuse.js configuration for fuzzy search
   const fuse = useMemo(() => new Fuse(products, {
@@ -91,8 +117,19 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
 
   const getProductPromo = (productId: string) => {
     return activePromotions.find(p => {
+      // Check if this product is in the promotion's target_variants
+      if (p.target_variants && p.target_variants.length > 0) {
+        return p.target_variants.includes(productId);
+      }
+      
+      // For BOGO promotions, also check rules.product_id
       const rules = p.rules as { product_id?: string };
-      return rules && rules.product_id === productId;
+      if (rules && rules.product_id === productId) {
+        return true;
+      }
+      
+      // If no target_variants and no product_id, it applies to all products
+      return !p.target_variants || p.target_variants.length === 0;
     });
   };
 
@@ -230,22 +267,36 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
 
       {/* Product Grid */}
       <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
-        {filteredProducts.map((product) => (
+        {filteredProducts.map((product) => {
+          const stockQty = product.quantity_on_hand ?? 0;
+          return (
           <button
             key={product.id}
             onClick={() => onProductClick(product)}
             style={product.is_quick_key && product.quick_key_color ? { borderColor: product.quick_key_color, borderWidth: '2px' } : {}}
             className={clsx(
               "glass-panel p-4 rounded-xl transition-all duration-200 max-h-48 hover:scale-105  hover:shadow-2xl hover:border-blue-300/80 dark:hover:border-blue-500/50 dark:hover:shadow-blue-500/20 text-left group relative overflow-hidden",
-              product.stock_quantity === 0 && "opacity-50 cursor-not-allowed"
+              stockQty === 0 && "opacity-50 cursor-not-allowed"
             )}
-            disabled={product.stock_quantity === 0}
+            disabled={stockQty === 0}
           >
-            {product.is_quick_key && (
-               <div className="absolute top-0 right-0 p-1">
-                 <Star size={12} className="text-amber-400 fill-amber-400" />
-               </div>
-            )}
+            {/* Favorite Toggle Button */}
+            <button
+              onClick={(e) => toggleFavorite(e, product)}
+              className="absolute top-2 right-2 p-1.5 rounded-full bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-slate-700 transition-all z-30 shadow-sm hover:shadow-md group/fav"
+              title={product.is_quick_key ? t('pos.removeFromFavorites') : t('pos.addToFavorites')}
+            >
+              <Star 
+                size={16} 
+                className={clsx(
+                  "transition-all",
+                  product.is_quick_key 
+                    ? "text-amber-500 fill-amber-500" 
+                    : "text-gray-400 dark:text-slate-500 group-hover/fav:text-amber-400"
+                )}
+              />
+            </button>
+
             {getProductPromo(product.id) && (
               <div 
                 className={`absolute top-0 left-0 ${getPromoBadgeColor(getProductPromo(product.id)!)} text-white text-[10px] font-bold px-2 py-1 rounded-br-lg z-20 flex items-center gap-1 shadow-sm`}
@@ -261,21 +312,24 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
                 style={{ backgroundColor: product.quick_key_color }} 
               />
             )}
-            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors relative z-10">{product.name}</h3>
+            <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors relative z-10 pr-6">{product.name}</h3>
             <p className="text-blue-600 dark:text-blue-400 font-mono text-lg font-bold mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 relative z-10">
               {product.sale_price.toFixed(2)} BGN
             </p>
             <div className="flex items-center justify-between text-sm relative z-10">
               <span className="text-gray-500 dark:text-slate-400">{t('pos.stock')}:</span>
-              <span className={clsx("font-semibold", getStockColor(product.stock_quantity, product.min_stock_level))}>
-                {product.stock_quantity}
+              <span className={clsx("font-semibold", getStockColor(stockQty, product.min_stock_level))}>
+                {typeof product.quantity_on_hand === 'number' ? product.quantity_on_hand : (
+                  <span className="text-amber-600 dark:text-amber-400">No Stock</span>
+                )}
               </span>
             </div>
             {product.barcode && (
               <p className="text-xs text-gray-400 dark:text-slate-500 mt-2 font-mono relative z-10">{product.barcode}</p>
             )}
           </button>
-        ))}
+          );
+        })}
       </div>
 
       {filteredProducts.length === 0 && (

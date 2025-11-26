@@ -10,6 +10,7 @@ interface ElectronAPI {
       port: number;
     };
   }) => Promise<{ success: boolean; error?: string }>;
+  showNotification: (data: { title: string; body: string }) => Promise<void>;
 }
 
 declare global {

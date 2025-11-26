@@ -100,10 +100,10 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose }) => {
       await db.shifts.add(newShift);
       setCurrentShift(newShift);
       setStartCash('');
-      toast.success('Shift started');
+      toast.success(t('shift.messages.started'));
     } catch (error) {
       console.error('Failed to start shift:', error);
-      toast.error('Failed to start shift');
+      toast.error(t('shift.messages.startError'));
     }
   };
 
@@ -112,7 +112,7 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose }) => {
 
     const actualCash = parseFloat(endCash);
     if (isNaN(actualCash) || actualCash < 0) {
-      toast.error('Invalid end cash amount');
+      toast.error(t('shift.messages.invalidAmount'));
       return;
     }
 
@@ -156,18 +156,18 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose }) => {
       setTransactions([]);
       
       if (blindClose) {
-        toast.success('Shift closed successfully');
+        toast.success(t('shift.messages.closed'));
       } else {
         if (Math.abs(difference) > 0.01) {
-          toast.warning(`Shift closed with difference: ${formatCurrency(difference)}`);
+          toast.warning(`${t('shift.messages.closedWithDifference')} ${formatCurrency(difference)}`);
         } else {
-          toast.success('Shift closed successfully');
+          toast.success(t('shift.messages.closed'));
         }
       }
       onClose();
     } catch (error) {
       console.error('Failed to end shift:', error);
-      toast.error('Failed to end shift');
+      toast.error(t('shift.messages.closeError'));
     }
   };
 
@@ -176,12 +176,12 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose }) => {
 
     const amount = parseFloat(payInOutAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error('Invalid amount');
+      toast.error(t('shift.messages.amountInvalid'));
       return;
     }
 
     if (requirePayReason && !payInOutReason.trim()) {
-      toast.error('Reason is required');
+      toast.error(t('shift.messages.reasonRequired'));
       return;
     }
 
@@ -200,10 +200,10 @@ export const ShiftModal: React.FC<ShiftModalProps> = ({ isOpen, onClose }) => {
       setShowPayInOut(null);
       setPayInOutAmount('');
       setPayInOutReason('');
-      toast.success(`Cash ${showPayInOut === 'in' ? 'in' : 'out'} recorded`);
+      toast.success(showPayInOut === 'in' ? t('shift.messages.cashInRecorded') : t('shift.messages.cashOutRecorded'));
     } catch (error) {
       console.error('Failed to record transaction:', error);
-      toast.error('Failed to record transaction');
+      toast.error(t('shift.messages.transactionError'));
     }
   };
 

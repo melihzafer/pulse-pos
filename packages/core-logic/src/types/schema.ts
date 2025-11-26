@@ -16,6 +16,9 @@ export type ShiftStatus = z.infer<typeof ShiftStatusSchema>;
 export const CashTransactionTypeSchema = z.enum(['sale', 'refund', 'pay_in', 'pay_out']);
 export type CashTransactionType = z.infer<typeof CashTransactionTypeSchema>;
 
+export const StockAdjustmentReasonSchema = z.enum(['damaged', 'expired', 'theft', 'counting_error', 'promotion', 'sample', 'other']);
+export type StockAdjustmentReason = z.infer<typeof StockAdjustmentReasonSchema>;
+
 // --- Domain Models ---
 
 export const WorkspaceSchema = z.object({
@@ -29,6 +32,7 @@ export type Workspace = z.infer<typeof WorkspaceSchema>;
 export const ProductSchema = z.object({
   id: z.string().uuid(),
   workspace_id: z.string().uuid(),
+  location_id: z.string().uuid().optional(), // Phase 5: Multi-location support
   name: z.string().min(1),
   barcode: z.string().optional(),
   sku: z.string().optional(),
@@ -113,6 +117,7 @@ export const SaleItemSchema = z.object({
   cost_snapshot: z.number(),
   price_snapshot: z.number(),
   quantity: z.number(),
+  discount: z.number().optional(),
 });
 export type SaleItem = z.infer<typeof SaleItemSchema>;
 
@@ -131,12 +136,26 @@ export const CustomerSchema = z.object({
   points: z.number().default(0),
   created_at: z.string().datetime().optional(),
   updated_at: z.string().datetime().optional(),
+  // Phase 2 additions
+  birth_date: z.string().optional(),
+  tier: z.enum(['bronze', 'silver', 'gold', 'platinum']).default('bronze'),
+  total_spent: z.number().default(0),
+  visit_count: z.number().default(0),
+  last_visit_date: z.string().datetime().optional(),
+  preferences: z.any().optional(),
+  tags: z.array(z.string()).default([]),
+  referral_code: z.string().optional(),
+  referred_by: z.string().uuid().optional(),
+  notes: z.string().optional(),
+  // Phase 4 additions
+  credit_balance: z.number().default(0),
 });
 export type Customer = z.infer<typeof CustomerSchema>;
 
 export const SaleSchema = z.object({
   id: z.string().uuid(),
   workspace_id: z.string().uuid(),
+  location_id: z.string().uuid().optional(), // Phase 5: Multi-location support
   user_id: z.string().uuid().optional(),
   customer_id: z.string().uuid().optional(), // Added customer_id
   total_amount: z.number(),
@@ -152,17 +171,25 @@ export type Sale = z.infer<typeof SaleSchema>;
 export const StockMovementSchema = z.object({
   id: z.string().uuid(),
   workspace_id: z.string().uuid(),
+  location_id: z.string().uuid().optional(), // Phase 5: Multi-location support
   product_id: z.string().uuid(),
   quantity_change: z.number(),
   reason: StockMovementReasonSchema,
   reference_id: z.string().uuid().optional(),
   created_at: z.string().datetime().optional(),
+  // Phase 3.3 additions for batch tracking
+  batch_number: z.string().optional(),
+  expiration_date: z.string().datetime().optional(),
+  adjustment_reason: StockAdjustmentReasonSchema.optional(),
+  adjustment_notes: z.string().optional(),
+  adjustment_photo_url: z.string().optional(),
 });
 export type StockMovement = z.infer<typeof StockMovementSchema>;
 
 export const ShiftSchema = z.object({
   id: z.string().uuid(),
   workspace_id: z.string().uuid(),
+  location_id: z.string().uuid().optional(), // Phase 5: Multi-location support
   user_id: z.string().uuid().optional(),
   start_time: z.string().datetime(),
   end_time: z.string().datetime().optional(),
@@ -183,3 +210,216 @@ export const CashTransactionSchema = z.object({
   created_at: z.string().datetime(),
 });
 export type CashTransaction = z.infer<typeof CashTransactionSchema>;
+
+// --- Phase 3: Supplier & Purchase Order Schemas ---
+
+export const PaymentTermsSchema = z.enum(['cash', 'net15', 'net30', 'net60']);
+export type PaymentTerms = z.infer<typeof PaymentTermsSchema>;
+
+export const SupplierSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  name: z.string().min(1),
+  contact_person: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  address: z.string().optional(),
+  payment_terms: PaymentTermsSchema.default('cash'),
+  lead_time_days: z.number().default(7),
+  is_active: z.boolean().default(true),
+  notes: z.string().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type Supplier = z.infer<typeof SupplierSchema>;
+
+export const ProductSupplierSchema = z.object({
+  id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  supplier_id: z.string().uuid(),
+  supplier_sku: z.string().optional(),
+  cost_price: z.number().min(0),
+  is_preferred: z.boolean().default(false),
+  min_order_quantity: z.number().default(1),
+  created_at: z.string().datetime().optional(),
+});
+export type ProductSupplier = z.infer<typeof ProductSupplierSchema>;
+
+export const PurchaseOrderStatusSchema = z.enum(['draft', 'sent', 'confirmed', 'received', 'cancelled']);
+export type PurchaseOrderStatus = z.infer<typeof PurchaseOrderStatusSchema>;
+
+export const PurchaseOrderSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  po_number: z.string(), // auto-generated PO-001, PO-002
+  supplier_id: z.string().uuid(),
+  status: PurchaseOrderStatusSchema.default('draft'),
+  order_date: z.string().datetime(),
+  expected_delivery_date: z.string().datetime().optional(),
+  actual_delivery_date: z.string().datetime().optional(),
+  subtotal: z.number(),
+  tax: z.number().default(0),
+  shipping: z.number().default(0),
+  total: z.number(),
+  notes: z.string().optional(),
+  created_by: z.string().uuid().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
+
+export const PurchaseOrderItemSchema = z.object({
+  id: z.string().uuid(),
+  po_id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  product_name: z.string(), // snapshot
+  quantity_ordered: z.number(),
+  quantity_received: z.number().default(0),
+  unit_cost: z.number(),
+  total_cost: z.number(),
+  notes: z.string().optional(),
+});
+export type PurchaseOrderItem = z.infer<typeof PurchaseOrderItemSchema>;
+
+// --- Phase 4: Payment & Financial Schemas ---
+
+export const GiftCardSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  card_number: z.string(), // barcode format
+  balance: z.number(),
+  original_amount: z.number(),
+  is_active: z.boolean().default(true),
+  issued_date: z.string().datetime(),
+  last_used_date: z.string().datetime().optional(),
+  issued_by_user_id: z.string().uuid().optional(),
+  sold_to_customer_id: z.string().uuid().optional(),
+  notes: z.string().optional(),
+  created_at: z.string().datetime().optional(),
+});
+export type GiftCard = z.infer<typeof GiftCardSchema>;
+
+export const CreditTransactionTypeSchema = z.enum(['issued', 'redeemed', 'expired', 'adjusted']);
+export type CreditTransactionType = z.infer<typeof CreditTransactionTypeSchema>;
+
+export const CreditTransactionSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  customer_id: z.string().uuid(),
+  type: CreditTransactionTypeSchema,
+  amount: z.number(),
+  balance_after: z.number(),
+  reason: z.string().optional(),
+  reference_id: z.string().uuid().optional(), // sale_id or refund_id
+  created_by: z.string().uuid().optional(),
+  created_at: z.string().datetime(),
+});
+export type CreditTransaction = z.infer<typeof CreditTransactionSchema>;
+
+export const LayawayOrderStatusSchema = z.enum(['active', 'completed', 'cancelled']);
+export type LayawayOrderStatus = z.infer<typeof LayawayOrderStatusSchema>;
+
+export const LayawayOrderSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  order_number: z.string(), // auto-generated LAY-001
+  customer_id: z.string().uuid(),
+  user_id: z.string().uuid(), // cashier who created the layaway
+  status: LayawayOrderStatusSchema.default('active'),
+  subtotal: z.number(),
+  tax: z.number(),
+  total: z.number(),
+  deposit_amount: z.number(),
+  balance_due: z.number(),
+  deposit_percentage: z.number().default(20),
+  restocking_fee_percent: z.number().default(10),
+  created_at: z.string().datetime(),
+  completed_at: z.string().datetime().optional(),
+  cancelled_at: z.string().datetime().optional(),
+  notes: z.string().optional(),
+});
+export type LayawayOrder = z.infer<typeof LayawayOrderSchema>;
+
+export const LayawayOrderItemSchema = z.object({
+  id: z.string().uuid(),
+  layaway_id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  product_name: z.string(), // snapshot
+  quantity: z.number(),
+  unit_price: z.number(),
+  subtotal: z.number(),
+});
+export type LayawayOrderItem = z.infer<typeof LayawayOrderItemSchema>;
+
+export const LayawayPaymentSchema = z.object({
+  id: z.string().uuid(),
+  layaway_id: z.string().uuid(),
+  amount: z.number(),
+  payment_date: z.string().datetime(),
+  payment_method: PaymentMethodSchema.optional(),
+  notes: z.string().optional(),
+});
+export type LayawayPayment = z.infer<typeof LayawayPaymentSchema>;
+
+// --- Phase 5: Multi-Location Support Schemas ---
+
+export const LocationSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  name: z.string().min(1),
+  address: z.string().optional(),
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+  manager_user_id: z.string().uuid().optional(),
+  timezone: z.string().default('Europe/Sofia'),
+  currency: z.string().default('BGN'),
+  is_active: z.boolean().default(true),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type Location = z.infer<typeof LocationSchema>;
+
+export const StockTransferStatusSchema = z.enum(['requested', 'approved', 'shipped', 'received', 'cancelled']);
+export type StockTransferStatus = z.infer<typeof StockTransferStatusSchema>;
+
+export const StockTransferSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  transfer_number: z.string(), // auto-generated TRF-001
+  from_location_id: z.string().uuid(),
+  to_location_id: z.string().uuid(),
+  status: StockTransferStatusSchema.default('requested'),
+  requested_by_user_id: z.string().uuid(),
+  approved_by_user_id: z.string().uuid().optional(),
+  requested_date: z.string().datetime(),
+  approved_date: z.string().datetime().optional(),
+  shipped_date: z.string().datetime().optional(),
+  received_date: z.string().datetime().optional(),
+  notes: z.string().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type StockTransfer = z.infer<typeof StockTransferSchema>;
+
+export const StockTransferItemSchema = z.object({
+  id: z.string().uuid(),
+  transfer_id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  product_name: z.string(), // snapshot
+  quantity_requested: z.number(),
+  quantity_approved: z.number().default(0),
+  quantity_received: z.number().default(0),
+  notes: z.string().optional(),
+});
+export type StockTransferItem = z.infer<typeof StockTransferItemSchema>;
+
+export const LocationPricingSchema = z.object({
+  id: z.string().uuid(),
+  location_id: z.string().uuid(),
+  product_id: z.string().uuid(),
+  sale_price: z.number().min(0),
+  is_active: z.boolean().default(true),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type LocationPricing = z.infer<typeof LocationPricingSchema>;

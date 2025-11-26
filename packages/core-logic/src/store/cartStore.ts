@@ -33,83 +33,114 @@ export const useCartStore = create<CartStore>((set, get) => ({
   customer: null,
   
   addToCart: async (product: Product, quantity: number = 1, options: { isPayItForward?: boolean, redeemedFromPifId?: string, priceOverride?: number } = {}) => {
-    const currentItems = get().items;
-    const { isPayItForward, redeemedFromPifId, priceOverride } = options;
-    
-    // Only merge if no special options are set
-    const shouldMerge = !isPayItForward && !redeemedFromPifId && priceOverride === undefined;
-    
-    const existingItem = shouldMerge 
-      ? currentItems.find(item => item.product.id === product.id && !item.isPayItForward && !item.redeemedFromPifId && item.priceOverride === undefined)
-      : undefined;
-    
-    const price = priceOverride !== undefined ? priceOverride : product.sale_price;
-    
-    let newItems = [...currentItems];
-
-    if (existingItem) {
-      // Update quantity
-      newItems = currentItems.map(item =>
-        item.id === existingItem.id
-          ? {
-              ...item,
-              quantity: item.quantity + quantity,
-              subtotal: (item.quantity + quantity) * price,
-            }
-          : item
-      );
-    } else {
-      // Add new item
-      const newItem: CartItem = {
-        id: generateId(),
-        product,
-        quantity,
-        subtotal: quantity * price,
-        isPayItForward,
-        redeemedFromPifId,
-        priceOverride
-      };
+    try {
+      const currentItems = get().items;
+      const { isPayItForward, redeemedFromPifId, priceOverride } = options;
       
-      newItems = [...currentItems, newItem];
-    }
+      // Only merge if no special options are set
+      const shouldMerge = !isPayItForward && !redeemedFromPifId && priceOverride === undefined;
+      
+      const existingItem = shouldMerge 
+        ? currentItems.find(item => item.product.id === product.id && !item.isPayItForward && !item.redeemedFromPifId && item.priceOverride === undefined)
+        : undefined;
+      
+      const price = priceOverride !== undefined ? priceOverride : product.sale_price;
+      
+      let newItems = [...currentItems];
 
-    // Apply promotions
-    const promotedItems = await marketService.applyPromotions(newItems);
-    set({ items: promotedItems });
-    
-    // Play sound effect (if in Electron context)
-    if (typeof window !== 'undefined' && 'electronAPI' in window) {
-      // @ts-ignore
-      window.electronAPI?.playSound?.('beep');
+      if (existingItem) {
+        // Update quantity
+        newItems = currentItems.map(item =>
+          item.id === existingItem.id
+            ? {
+                ...item,
+                quantity: item.quantity + quantity,
+                subtotal: (item.quantity + quantity) * price,
+              }
+            : item
+        );
+      } else {
+        // Add new item
+        const newItem: CartItem = {
+          id: generateId(),
+          product,
+          quantity,
+          subtotal: quantity * price,
+          isPayItForward,
+          redeemedFromPifId,
+          priceOverride
+        };
+        
+        newItems = [...currentItems, newItem];
+      }
+
+      // Apply promotions
+      try {
+        const promotedItems = await marketService.applyPromotions(newItems);
+        set({ items: promotedItems });
+      } catch (promoError) {
+        console.error('Error applying promotions:', promoError);
+        // Fall back to items without promotions
+        set({ items: newItems });
+      }
+      
+      // Play sound effect (if in Electron context)
+      if (typeof window !== 'undefined' && 'electronAPI' in window) {
+        // @ts-ignore
+        window.electronAPI?.playSound?.('beep');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      throw error;
     }
   },
   
   removeFromCart: async (cartItemId: string) => {
-    const newItems = get().items.filter(item => item.id !== cartItemId);
-    const promotedItems = await marketService.applyPromotions(newItems);
-    set({ items: promotedItems });
+    try {
+      const newItems = get().items.filter(item => item.id !== cartItemId);
+      try {
+        const promotedItems = await marketService.applyPromotions(newItems);
+        set({ items: promotedItems });
+      } catch (promoError) {
+        console.error('Error applying promotions after remove:', promoError);
+        set({ items: newItems });
+      }
+    } catch (error) {
+      console.error('Error removing from cart:', error);
+      throw error;
+    }
   },
   
   updateQuantity: async (cartItemId: string, quantity: number) => {
-    if (quantity <= 0) {
-      await get().removeFromCart(cartItemId);
-      return;
-    }
-    
-    const newItems = get().items.map(item => {
-      if (item.id === cartItemId) {
-        const price = item.priceOverride !== undefined ? item.priceOverride : item.product.sale_price;
-        return {
-          ...item,
-          quantity,
-          subtotal: quantity * price,
-        };
+    try {
+      if (quantity <= 0) {
+        await get().removeFromCart(cartItemId);
+        return;
       }
-      return item;
-    });
+      
+      const newItems = get().items.map(item => {
+        if (item.id === cartItemId) {
+          const price = item.priceOverride !== undefined ? item.priceOverride : item.product.sale_price;
+          return {
+            ...item,
+            quantity,
+            subtotal: quantity * price,
+          };
+        }
+        return item;
+      });
 
-    const promotedItems = await marketService.applyPromotions(newItems);
-    set({ items: promotedItems });
+      try {
+        const promotedItems = await marketService.applyPromotions(newItems);
+        set({ items: promotedItems });
+      } catch (promoError) {
+        console.error('Error applying promotions after quantity update:', promoError);
+        set({ items: newItems });
+      }
+    } catch (error) {
+      console.error('Error updating quantity:', error);
+      throw error;
+    }
   },
   
   clearCart: () => {

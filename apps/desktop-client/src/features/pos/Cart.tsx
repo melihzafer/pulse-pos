@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Minus, Trash2, Clock, PauseCircle, User, Sparkles, Heart } from 'lucide-react';
+import { Plus, Minus, Trash2, Clock, PauseCircle, User, Sparkles, Heart, Tag, Eye } from 'lucide-react';
 import { useCartStore, formatCurrency, ParkedSale, Product, getUpsellProducts } from '@pulse/core-logic';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -10,9 +10,10 @@ import { PayItForwardModal } from './PayItForwardModal';
 interface CartProps {
   onPay?: () => void;
   products: Product[];
+  onViewCustomerProfile?: (customerId: string) => void;
 }
 
-export const Cart: React.FC<CartProps> = ({ onPay, products }) => {
+export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfile }) => {
   const { t } = useTranslation();
   const { items, removeFromCart, updateQuantity, clearCart, getTotal, getItemCount, parkOrder, restoreOrder, customer, addToCart } = useCartStore();
   const [showParkedSales, setShowParkedSales] = useState(false);
@@ -61,6 +62,15 @@ export const Cart: React.FC<CartProps> = ({ onPay, products }) => {
             <User size={18} />
             {customer && <span className="max-w-[80px] truncate">{customer.name}</span>}
           </button>
+          {customer && onViewCustomerProfile && (
+            <button
+              onClick={() => onViewCustomerProfile(customer.id)}
+              className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+              title={t('customer.viewProfile', 'View Profile')}
+            >
+              <Eye size={18} />
+            </button>
+          )}
           <button
             onClick={() => setShowParkedSales(true)}
             className="text-sm text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300 transition-colors flex items-center gap-1"
@@ -89,7 +99,17 @@ export const Cart: React.FC<CartProps> = ({ onPay, products }) => {
           items.map((item) => (
             <div key={item.id} className="glass-panel p-4 rounded-xl hover:shadow-lg transition-all">
               <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold text-gray-900 dark:text-white flex-1">{item.product.name}</h3>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 dark:text-white">{item.product.name}</h3>
+                  {item.appliedPromotionId && item.discount && item.discount > 0 && (
+                    <div className="flex items-center gap-1 mt-1">
+                      <Tag size={14} className="text-green-500" />
+                      <span className="text-xs font-medium text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 px-2 py-0.5 rounded-full">
+                        {t('cart.promoApplied', 'Promo Applied')}
+                      </span>
+                    </div>
+                  )}
+                </div>
                 <button
                   onClick={() => removeFromCart(item.id)}
                   className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20 transition-all ml-2 p-1 rounded-lg"

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Store Credit Fix - Tek Tıkla Düzelt</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .card {
+      background: white;
+      color: #333;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #667eea;
+      margin-top: 0;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+    button:hover {
+      background: #5568d3;
+    }
+    button.danger {
+      background: #e74c3c;
+    }
+    button.danger:hover {
+      background: #c0392b;
+    }
+    #output {
+      background: #1e1e1e;
+      color: #00ff00;
+      padding: 20px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-family: 'Courier New', monospace;
+      max-height: 400px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .success { color: #2ecc71; }
+    .error { color: #e74c3c; }
+    .warning { color: #f39c12; }
+    .step {
+      background: #ecf0f1;
+      padding: 15px;
+      margin: 10px 0;
+      border-left: 4px solid #667eea;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🛠️ Store Credit Quick Fix</h1>
+    
+    <div class="step">
+      <strong>Sorun:</strong> Database'de müşterilerin credit_balance değerleri 0 gözüküyor.
+    </div>
+    
+    <button onclick="fixCredits()">
+      ✅ KREDİLERİ DÜZELT (Tek Tık!)
+    </button>
+    
+    <button onclick="checkDatabase()">
+      🔍 Veritabanını Kontrol Et
+    </button>
+    
+    <button class="danger" onclick="resetDatabase()">
+      🗑️ Tam Sıfırlama (Tüm veriyi sil)
+    </button>
+    
+    <div id="output">Butona tıklayın...</div>
+    
+    <div class="step">
+      <strong>Sonraki Adımlar:</strong><br>
+      1. ✅ butona tıkla<br>
+      2. POS ekranına git<br>
+      3. Sepete ürün ekle<br>
+      4. Jane Smith'i seç (100 BGN kredisi var)<br>
+      5. "Öde" butonuna tıkla<br>
+      6. Store Credit artık görünecek! 🎉
+    </div>
+  </div>
+
+  <script type="module">
+    let db;
+    
+    async function initDB() {
+      if (!db) {
+        const module = await import('@pulse/core-logic');
+        db = module.db;
+      }
+      return db;
+    }
+    
+    window.fixCredits = async () => {
+      const output = document.getElementById('output');
+      output.innerHTML = '🔧 Starting fix...\n\n';
+      
+      try {
+        const database = await initDB();
+        output.innerHTML += '✅ Database connected\n\n';
+        
+        const updates = [
+          { name: 'Jane Smith', credit: 100 },
+          { name: 'John Doe', credit: 50 },
+          { name: 'Ali Yılmaz', credit: 25 },
+          { name: 'Ayşe Demir', credit: 60 }
+        ];
+        
+        output.innerHTML += '💰 Updating customers...\n\n';
+        
+        for (const update of updates) {
+          const customer = await database.customers.where('name').equals(update.name).first();
+          
+          if (customer) {
+            await database.customers.update(customer.id, {
+              credit_balance: update.credit,
+              updated_at: new Date().toISOString()
+            });
+            output.innerHTML += `<span class="success">✅ ${update.name}: ${update.credit} BGN</span>\n`;
+          } else {
+            output.innerHTML += `<span class="warning">⚠️  Not found: ${update.name}</span>\n`;
+          }
+        }
+        
+        output.innerHTML += '\n<span class="success">🎉 SUCCESS! All credits updated!</span>\n\n';
+        output.innerHTML += '📌 Now go to POS and test with Jane Smith\n';
+        
+        // Show summary
+        const all = await database.customers.toArray();
+        output.innerHTML += `\n📊 Total customers: ${all.length}\n`;
+        output.innerHTML += `💳 Customers with credit: ${all.filter(c => (c.credit_balance || 0) > 0).length}\n`;
+        
+      } catch (error) {
+        output.innerHTML += `\n<span class="error">❌ ERROR: ${error.message}</span>\n`;
+        output.innerHTML += '\n💡 Try "Tam Sıfırlama" button instead\n';
+      }
+    };
+    
+    window.checkDatabase = async () => {
+      const output = document.getElementById('output');
+      output.innerHTML = '🔍 Checking database...\n\n';
+      
+      try {
+        const database = await initDB();
+        const customers = await database.customers.toArray();
+        
+        output.innerHTML += `📊 Total Customers: ${customers.length}\n\n`;
+        
+        customers.forEach(c => {
+          const credit = c.credit_balance || 0;
+          const emoji = credit > 0 ? '💰' : '⚪';
+          output.innerHTML += `${emoji} ${c.name}: ${credit.toFixed(2)} BGN (${c.tier})\n`;
+        });
+        
+        const withCredit = customers.filter(c => (c.credit_balance || 0) > 0).length;
+        output.innerHTML += `\n💳 ${withCredit} customers have store credit\n`;
+        
+      } catch (error) {
+        output.innerHTML += `<span class="error">❌ ERROR: ${error.message}</span>\n`;
+      }
+    };
+    
+    window.resetDatabase = async () => {
+      if (!confirm('⚠️ Bu işlem TÜM veritabanını silecek!\n\nDevam etmek istiyor musunuz?')) {
+        return;
+      }
+      
+      const output = document.getElementById('output');
+      output.innerHTML = '🗑️ Deleting database...\n\n';
+      
+      try {
+        const database = await initDB();
+        await database.delete();
+        output.innerHTML += '<span class="success">✅ Database deleted!</span>\n\n';
+        output.innerHTML += '🔄 Reloading page in 2 seconds...\n';
+        output.innerHTML += '(Yeni veriler otomatik yüklenecek)\n';
+        
+        setTimeout(() => {
+          location.reload();
+        }, 2000);
+        
+      } catch (error) {
+        output.innerHTML += `<span class="error">❌ ERROR: ${error.message}</span>\n`;
+      }
+    };
+    
+    // Auto-check on load
+    window.addEventListener('load', () => {
+      checkDatabase();
+    });
+  </script>
+</body>
+</html>

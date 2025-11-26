@@ -71,8 +71,10 @@ class SyncService {
       await this.pushChanges();
 
       console.log('Sync completed successfully');
+      window.dispatchEvent(new CustomEvent('sync-success'));
     } catch (error) {
       console.error('Sync failed:', error);
+      window.dispatchEvent(new CustomEvent('sync-error', { detail: error }));
     } finally {
       this.isSyncing = false;
     }

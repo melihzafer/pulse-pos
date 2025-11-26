@@ -1,4 +1,4 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, Notification } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { setupPrinterIPC } from './printer'
@@ -30,7 +30,37 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
+      devTools: true, // Explicitly enable DevTools
     },
+  })
+
+  // Open DevTools in development mode
+  if (VITE_DEV_SERVER_URL) {
+    win.webContents.openDevTools()
+  }
+
+  // Enable F12 and other DevTools shortcuts
+  win.webContents.on('before-input-event', (_event, input) => {
+    // F12 - Toggle DevTools
+    if (input.key === 'F12') {
+      if (win?.webContents.isDevToolsOpened()) {
+        win.webContents.closeDevTools()
+      } else {
+        win?.webContents.openDevTools()
+      }
+    }
+    // Ctrl+Shift+I - Toggle DevTools
+    if (input.control && input.shift && input.key === 'I') {
+      if (win?.webContents.isDevToolsOpened()) {
+        win.webContents.closeDevTools()
+      } else {
+        win?.webContents.openDevTools()
+      }
+    }
+    // Ctrl+Shift+J - Open DevTools Console
+    if (input.control && input.shift && input.key === 'J') {
+      win?.webContents.openDevTools({ mode: 'detach' })
+    }
   })
 
   // Test active push message to Renderer-process.
@@ -82,4 +112,8 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   createWindow()
   setupPrinterIPC()
+
+  ipcMain.handle('show-notification', (_event, { title, body }) => {
+    new Notification({ title, body }).show()
+  })
 })

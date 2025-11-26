@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CreditCard, Banknote, Check, ArrowRightLeft, PieChart, Trash2, Plus } from 'lucide-react';
+import { X, CreditCard, Banknote, Check, ArrowRightLeft, PieChart, Trash2, Plus, Gift, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PaymentMethod, useCartStore, db } from '@pulse/core-logic';
+import { PaymentMethod, useCartStore, db, GiftCardService } from '@pulse/core-logic';
 import clsx from 'clsx';
+import { GiftCardRedeemModal } from './GiftCardRedeemModal';
+import { toast } from 'sonner';
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -24,6 +26,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
   const [splitPayments, setSplitPayments] = useState<{ method: PaymentMethod, amount: number }[]>([]);
   const [splitAmount, setSplitAmount] = useState<string>('');
   const [splitMethod, setSplitMethod] = useState<PaymentMethod>('cash');
+  
+  // Gift card state
+  const [isGiftCardModalOpen, setIsGiftCardModalOpen] = useState(false);
+  const [giftCardRedemptions, setGiftCardRedemptions] = useState<{ cardNumber: string; amount: number }[]>([]);
+  
+  // Store credit state
+  const [customerCreditBalance, setCustomerCreditBalance] = useState(0);
+  const [storeCreditApplied, setStoreCreditApplied] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,18 +49,38 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
       setSplitPayments([]);
       setSplitAmount('');
       setSplitMethod('cash');
+      setGiftCardRedemptions([]);
+      setIsGiftCardModalOpen(false);
+      setStoreCreditApplied(0);
+      
+      // Load customer credit balance
+      if (customer?.id) {
+        db.customers.get(customer.id).then((c) => {
+          const creditBalance = c?.credit_balance || 0;
+          setCustomerCreditBalance(creditBalance);
+        });
+      } else {
+        setCustomerCreditBalance(0);
+      }
+      
       setTimeout(() => inputRef.current?.focus(), 100);
     }
-  }, [isOpen]);
+  }, [isOpen, customer]);
 
   if (!isOpen) return null;
 
   // Calculate totals based on payment currency
   const totalDisplay = paymentCurrency === 'BGN' ? total : total / FIXED_RATE;
   
+  // Calculate gift card redemption total
+  const giftCardTotal = giftCardRedemptions.reduce((sum, gc) => sum + gc.amount, 0);
+  
+  // Split payment calculations (subtract gift cards and store credit from total)
+  const adjustedTotal = totalDisplay - giftCardTotal - storeCreditApplied;
+  
   // Calculate change
   const amount = parseFloat(amountTendered || '0');
-  const changeInPaymentCurrency = method === 'cash' ? Math.max(0, amount - totalDisplay) : 0;
+  const changeInPaymentCurrency = method === 'cash' ? Math.max(0, amount - adjustedTotal) : 0;
   
   // Convert change to display currency
   let changeDisplay = 0;
@@ -62,9 +92,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
     changeDisplay = changeInPaymentCurrency * FIXED_RATE;
   }
 
-  // Split payment calculations
-  const remainingAmount = totalDisplay - splitPayments.reduce((sum, p) => sum + p.amount, 0);
+  const remainingAmount = adjustedTotal - splitPayments.reduce((sum, p) => sum + p.amount, 0);
   const canAddSplit = parseFloat(splitAmount) > 0 && parseFloat(splitAmount) <= remainingAmount + 0.01;
+
+  const canComplete = giftCardTotal >= totalDisplay || (method === 'split' 
+    ? Math.abs(remainingAmount) < 0.01 
+    : (method === 'card' || (amount >= adjustedTotal)));
 
   const handleAddSplit = () => {
     if (!canAddSplit) return;
@@ -79,25 +112,74 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
     setSplitPayments(newPayments);
   };
 
-  const canComplete = method === 'split' 
-    ? Math.abs(remainingAmount) < 0.01 
-    : (method === 'card' || (amount >= totalDisplay));
+  const handleGiftCardRedeem = async (cardNumber: string, amount: number) => {
+    try {
+      const result = await GiftCardService.redeemGiftCard(cardNumber, amount);
+      
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+      
+      // Add to redemptions list
+      setGiftCardRedemptions([...giftCardRedemptions, { cardNumber, amount }]);
+      toast.success(
+        t('giftCard.redeemed', {
+          defaultValue: 'Redeemed {{amount}} BGN from gift card',
+          amount: amount.toFixed(2),
+        })
+      );
+      
+      if (result.newBalance > 0) {
+        toast.info(
+          t('giftCard.remainingBalance', {
+            defaultValue: 'Remaining balance: {{balance}} BGN',
+            balance: result.newBalance.toFixed(2),
+          })
+        );
+      }
+    } catch (error) {
+      console.error('Failed to redeem gift card:', error);
+      toast.error(t('giftCard.redeemError', 'Failed to redeem gift card'));
+    }
+  };
+
+  const handleApplyStoreCredit = () => {
+    if (!customer) {
+      toast.error(t('storeCredit.noCustomer', 'Please select a customer first'));
+      return;
+    }
+
+    if (customerCreditBalance <= 0) {
+      toast.error(t('storeCredit.noBalance', 'Customer has no store credit'));
+      return;
+    }
+
+    // Calculate max amount that can be applied (minimum of credit balance and remaining total)
+    const remainingTotal = totalDisplay - giftCardTotal - storeCreditApplied;
+    const maxApplicable = Math.min(customerCreditBalance - storeCreditApplied, remainingTotal);
+
+    if (maxApplicable <= 0) {
+      toast.warning(t('storeCredit.fullyApplied', 'Store credit already fully applied'));
+      return;
+    }
+
+    setStoreCreditApplied(storeCreditApplied + maxApplicable);
+    toast.success(
+      t('storeCredit.applied', {
+        defaultValue: 'Applied {{amount}} BGN store credit',
+        amount: maxApplicable.toFixed(2),
+      })
+    );
+  };
 
   const handleComplete = async () => {
     if (!canComplete) return;
     setIsProcessing(true);
 
-    // Award points if customer is attached
+    // Award points logic moved to POSScreen via LoyaltyService
     if (customer) {
-      try {
-        const pointsEarned = Math.floor(total); // 1 point per 1 unit
-        await db.customers.update(customer.id, {
-          points: customer.points + pointsEarned,
-          updated_at: new Date().toISOString()
-        });
-      } catch (error) {
-        console.error('Failed to update customer points:', error);
-      }
+      // No-op here, handled in parent
     }
 
     // Handle Pay It Forward items
@@ -139,6 +221,35 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
         ));
       } catch (error) {
         console.error('Failed to update Redeemed items:', error);
+      }
+    }
+
+    // Handle Store Credit application
+    if (storeCreditApplied > 0 && customer) {
+      try {
+        // Create credit transaction record
+        await db.credit_transactions.add({
+          id: crypto.randomUUID(),
+          workspace_id: '00000000-0000-0000-0000-000000000000',
+          customer_id: customer.id,
+          type: 'redeemed',
+          amount: storeCreditApplied,
+          balance_after: customerCreditBalance - storeCreditApplied,
+          reason: 'Applied to purchase',
+          created_at: new Date().toISOString(),
+          _synced: false,
+          _dirty: true,
+        });
+
+        // Update customer credit balance
+        await db.customers.update(customer.id, {
+          credit_balance: customerCreditBalance - storeCreditApplied,
+          _dirty: true,
+          _synced: false,
+        });
+      } catch (error) {
+        console.error('Failed to process store credit:', error);
+        toast.error(t('storeCredit.error', 'Failed to apply store credit'));
       }
     }
 
@@ -196,10 +307,106 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
             <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 font-mono">
               {formatMoney(totalDisplay, paymentCurrency)}
             </p>
+            {giftCardTotal > 0 && (
+              <div className="mt-2 p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <p className="text-xs text-purple-700 dark:text-purple-300 mb-1">
+                  {t('giftCard.afterGiftCards', 'After Gift Cards')}
+                </p>
+                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 font-mono">
+                  {formatMoney(adjustedTotal, paymentCurrency)}
+                </p>
+              </div>
+            )}
             {paymentCurrency === 'EUR' && (
               <p className="text-xs text-gray-400 mt-1">1 EUR = {FIXED_RATE} BGN</p>
             )}
           </div>
+
+          {/* Gift Card Redemptions Display */}
+          {giftCardRedemptions.length > 0 && (
+            <div className="space-y-2 p-3 bg-purple-50 dark:bg-purple-900/20 rounded-xl border border-purple-200 dark:border-purple-800">
+              <div className="flex items-center gap-2 text-purple-700 dark:text-purple-300 font-semibold text-sm">
+                <Gift size={16} />
+                <span>{t('giftCard.redemptions', 'Gift Card Redemptions')}</span>
+              </div>
+              {giftCardRedemptions.map((gc, idx) => (
+                <div key={idx} className="flex justify-between items-center text-sm">
+                  <span className="font-mono text-gray-600 dark:text-slate-400">{gc.cardNumber}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-purple-700 dark:text-purple-300">-{formatMoney(gc.amount, paymentCurrency)}</span>
+                    <button
+                      onClick={() => {
+                        const newRedemptions = [...giftCardRedemptions];
+                        newRedemptions.splice(idx, 1);
+                        setGiftCardRedemptions(newRedemptions);
+                      }}
+                      className="text-red-500 hover:text-red-600 p-1"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              <div className="pt-2 border-t border-purple-200 dark:border-purple-800 flex justify-between font-bold">
+                <span className="text-gray-700 dark:text-slate-300">{t('giftCard.totalApplied', 'Total Applied')}</span>
+                <span className="text-purple-700 dark:text-purple-300">-{formatMoney(giftCardTotal, paymentCurrency)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Gift Card Button */}
+          {adjustedTotal > 0 && (
+            <button
+              onClick={() => setIsGiftCardModalOpen(true)}
+              className="w-full p-3 rounded-xl border-2 border-purple-300 dark:border-purple-700 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 hover:from-purple-100 hover:to-pink-100 dark:hover:from-purple-900/30 dark:hover:to-pink-900/30 text-purple-700 dark:text-purple-300 font-semibold flex items-center justify-center gap-2 transition-all"
+            >
+              <Gift size={20} />
+              <span>{t('giftCard.applyGiftCard', 'Apply Gift Card')}</span>
+            </button>
+          )}
+
+          {/* Store Credit Display */}
+          {customer && customerCreditBalance > 0 && (
+            <div className="p-3 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold text-sm">
+                  <Wallet size={16} />
+                  <span>{t('storeCredit.available', 'Available Store Credit')}</span>
+                </div>
+                <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                  {formatMoney(customerCreditBalance, paymentCurrency)}
+                </span>
+              </div>
+              {storeCreditApplied > 0 && (
+                <div className="flex justify-between items-center text-sm pt-2 border-t border-emerald-200 dark:border-emerald-800">
+                  <span className="text-gray-600 dark:text-slate-400">{t('storeCredit.applied', 'Applied')}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-300">
+                      -{formatMoney(storeCreditApplied, paymentCurrency)}
+                    </span>
+                    <button
+                      onClick={() => setStoreCreditApplied(0)}
+                      className="text-red-500 hover:text-red-600 p-1"
+                      title={t('storeCredit.remove', 'Remove')}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Store Credit Button */}
+          {customer && customerCreditBalance > 0 && adjustedTotal > 0 && storeCreditApplied < customerCreditBalance && (
+            <button
+              onClick={handleApplyStoreCredit}
+              className="w-full p-3 rounded-xl border-2 border-emerald-300 dark:border-emerald-700 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 hover:from-emerald-100 hover:to-teal-100 dark:hover:from-emerald-900/30 dark:hover:to-teal-900/30 text-emerald-700 dark:text-emerald-300 font-semibold flex items-center justify-center gap-2 transition-all"
+            >
+              <Wallet size={20} />
+              <span>{t('storeCredit.useCredit', 'Use Store Credit')}</span>
+            </button>
+          )}
 
           {/* Payment Method Selection */}
           <div className="grid grid-cols-3 gap-3">
@@ -368,6 +575,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
           </button>
         </div>
       </div>
+      
+      {/* Gift Card Redemption Modal */}
+      <GiftCardRedeemModal
+        isOpen={isGiftCardModalOpen}
+        onClose={() => setIsGiftCardModalOpen(false)}
+        maxAmount={adjustedTotal}
+        onRedeem={handleGiftCardRedeem}
+      />
     </div>
   );
 };

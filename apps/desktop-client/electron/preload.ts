@@ -26,4 +26,5 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
 // Expose Electron API for Pulse app
 contextBridge.exposeInMainWorld('electronAPI', {
   printReceipt: (data: any) => ipcRenderer.invoke('print-receipt', data),
+  showNotification: (data: { title: string; body: string }) => ipcRenderer.invoke('show-notification', data),
 })

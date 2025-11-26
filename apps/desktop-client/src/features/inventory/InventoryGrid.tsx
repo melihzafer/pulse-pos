@@ -142,10 +142,10 @@ export const InventoryGrid: React.FC = () => {
                 {t('inventory.table.barcode')} {sortField === 'barcode' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
               <th 
-                onClick={() => handleSort('stock_quantity')}
+                onClick={() => handleSort('quantity_on_hand')}
                 className="text-right p-3 text-sm font-semibold text-gray-600 dark:text-slate-300 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                {t('inventory.table.stock')} {sortField === 'stock_quantity' && (sortDirection === 'asc' ? '↑' : '↓')}
+                {t('inventory.table.stock')} {sortField === 'quantity_on_hand' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
               <th 
                 onClick={() => handleSort('cost_price')}
@@ -169,12 +169,17 @@ export const InventoryGrid: React.FC = () => {
           </thead>
           <tbody>
             {sortedProducts.map((product) => {
-              const status = getStockStatus(product.stock_quantity, product.min_stock_level);
+              const stockQty = product.quantity_on_hand ?? 0;
+              const status = getStockStatus(stockQty, product.min_stock_level);
               return (
                 <tr key={product.id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="p-3 text-gray-900 dark:text-white font-medium">{product.name}</td>
                   <td className="p-3 text-gray-500 dark:text-slate-400 font-mono text-sm">{product.barcode || '-'}</td>
-                  <td className="p-3 text-right font-mono text-gray-900 dark:text-white">{product.stock_quantity}</td>
+                  <td className="p-3 text-right font-mono text-gray-900 dark:text-white">
+                    {typeof product.quantity_on_hand === 'number' ? product.quantity_on_hand : (
+                      <span className="text-amber-600 dark:text-amber-400">Stok Yok</span>
+                    )}
+                  </td>
                   <td className="p-3 text-right font-mono text-gray-500 dark:text-slate-400">{product.cost_price.toFixed(2)}</td>
                   <td className="p-3 text-right font-mono text-blue-600 dark:text-blue-400 font-semibold">{product.sale_price.toFixed(2)}</td>
                   <td className="p-3 text-center">

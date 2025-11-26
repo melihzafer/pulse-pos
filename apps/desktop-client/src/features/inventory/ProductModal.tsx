@@ -19,7 +19,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, pro
     sku: '',
     cost_price: 0,
     sale_price: 0,
-    stock_quantity: 0,
+    quantity_on_hand: 0,
     min_stock_level: 5,
     age_restricted: false,
   });
@@ -40,7 +40,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, pro
           sku: '',
           cost_price: 0,
           sale_price: 0,
-          stock_quantity: 0,
+          quantity_on_hand: 0,
           min_stock_level: 5,
           age_restricted: false,
         });
@@ -194,8 +194,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, pro
                 type="number"
                 step="1"
                 required
-                value={formData.stock_quantity}
-                onChange={(e) => setFormData({ ...formData, stock_quantity: parseFloat(e.target.value) })}
+                value={formData.quantity_on_hand ?? 0}
+                onChange={(e) => setFormData({ ...formData, quantity_on_hand: parseFloat(e.target.value) || 0 })}
                 className="w-full px-4 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none dark:text-white font-mono"
               />
             </div>

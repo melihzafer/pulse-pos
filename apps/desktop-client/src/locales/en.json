@@ -14,7 +14,28 @@
     "amount": "Amount",
     "reason": "Reason",
     "noReason": "No reason provided",
-    "deleteConfirm": "Are you sure you want to delete this item?"
+    "deleteConfirm": "Are you sure you want to delete this item?",
+    "confirm": "Confirm",
+    "ok": "OK",
+    "yes": "Yes",
+    "no": "No",
+    "currency": "BGN",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "total": "Total",
+    "totalSales": "Total Sales",
+    "transactions": "Transactions",
+    "avgTransaction": "Avg Transaction",
+    "totalRevenue": "Total Revenue",
+    "totalCOGS": "Total COGS",
+    "grossProfit": "Gross Profit",
+    "grossMargin": "Gross Margin",
+    "revenue": "Revenue",
+    "cogs": "COGS",
+    "exportExcel": "Export to Excel"
   },
   "shift": {
     "management": "Shift Management",
@@ -27,9 +48,23 @@
     "payOut": "Pay Out",
     "transactions": "Transactions",
     "closeShift": "Close Shift",
-    "countCashDrawer": "Count Cash Drawer"
+    "countCashDrawer": "Count Cash Drawer",
+    "messages": {
+      "started": "Shift started",
+      "startError": "Failed to start shift",
+      "invalidAmount": "Invalid end cash amount",
+      "closed": "Shift closed successfully",
+      "closedWithDifference": "Shift closed with difference:",
+      "closeError": "Failed to end shift",
+      "cashInRecorded": "Cash in recorded",
+      "cashOutRecorded": "Cash out recorded",
+      "transactionError": "Failed to record transaction",
+      "amountInvalid": "Invalid amount",
+      "reasonRequired": "Reason is required"
+    }
   },
   "customerDisplay": {
+    "display": "Display",
     "welcome": "Welcome to Pulse Store",
     "nextCustomer": "Next customer, please!",
     "thankYou": "Thank You!",
@@ -57,10 +92,71 @@
   "sidebar": {
     "pos": "POS",
     "inventory": "Inventory",
+    "promotions": "Promotions",
     "dashboard": "Dashboard",
+    "analytics": "Analytics",
     "settings": "Settings",
     "toggleTheme": "Toggle Theme",
-    "logout": "Logout"
+    "logout": "Logout",
+    "multiLocationDashboard": "Multi-Location",
+    "locationPL": "P&L Report"
+  },
+  "analytics": {
+    "title": "Analytics & Reports",
+    "subtitle": "Track your business performance and insights",
+    "tabs": {
+      "overview": "Overview",
+      "products": "Products",
+      "performance": "Performance",
+      "inventory": "Inventory"
+    },
+    "revenueTrends": "Revenue Trends",
+    "topProducts": "Top Products",
+    "lowStockAlerts": "Low Stock Alerts",
+    "profitMargin": "Profit Margin Analysis",
+    "salesHeatmap": "Sales Heatmap",
+    "cashierPerformance": "Cashier Performance",
+    "dateRange": "Date Range",
+    "period": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "thisWeek": "This Week",
+      "lastWeek": "Last Week",
+      "thisMonth": "This Month",
+      "lastMonth": "Last Month",
+      "custom": "Custom Range",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "yearly": "Yearly"
+    },
+    "metrics": {
+      "totalRevenue": "Total Revenue",
+      "totalSales": "Total Sales",
+      "avgTransaction": "Avg Transaction",
+      "itemsSold": "Items Sold",
+      "profit": "Profit",
+      "growth": "Growth"
+    },
+    "topProductsBy": {
+      "volume": "By Volume",
+      "revenue": "By Revenue",
+      "profit": "By Profit Margin"
+    },
+    "stockStatus": {
+      "critical": "Critical",
+      "warning": "Warning",
+      "ok": "OK",
+      "outOfStock": "Out of Stock",
+      "lowStock": "Low Stock",
+      "reorder": "Reorder"
+    },
+    "export": {
+      "pdf": "Export PDF",
+      "excel": "Export Excel",
+      "print": "Print Report"
+    },
+    "noData": "No data available for selected period"
   },
   "pos": {
     "searchPlaceholder": "Search products (F1)...",
@@ -71,6 +167,11 @@
     "productNotFound": "Product not found",
     "allProducts": "All Products",
     "favorites": "Favorites",
+    "addToFavorites": "Add to favorites",
+    "removeFromFavorites": "Remove from favorites",
+    "addedToFavorites": "{{name}} added to favorites",
+    "removedFromFavorites": "{{name}} removed from favorites",
+    "favoriteError": "Failed to update favorites",
     "parkedSales": "Parked Sales",
     "noParkedSales": "No parked sales",
     "parkOrder": "Park Order"
@@ -86,7 +187,8 @@
     "total": "Total",
     "pay": "Pay",
     "payNow": "Pay Now (F5)",
-    "clearConfirm": "Are you sure you want to clear the cart?"
+    "clearConfirm": "Are you sure you want to clear the cart?",
+    "promoApplied": "Promo Applied"
   },
   "payment": {
     "title": "Complete Payment",
@@ -110,8 +212,16 @@
     "paymentSuccessful": "Payment Successful",
     "thankYou": "Thank you for your purchase!",
     "print": "Print Receipt",
+    "download": "Download",
+    "downloaded": "Receipt PDF downloaded",
+    "downloadError": "Failed to download receipt",
     "email": "Email Receipt",
     "qr": "QR Code",
+    "install": "Install",
+    "installed": "Installed",
+    "installTooltip": "Generate and save fiscal receipt",
+    "fiscalGenerated": "Fiscal receipt {{number}} installed",
+    "installError": "Failed to install fiscal receipt",
     "newSale": "New Sale",
     "printing": "Printing receipt...",
     "emailSent": "Receipt sent to {{email}}"
@@ -120,6 +230,8 @@
     "title": "Inventory Management",
     "addProduct": "Add Product",
     "loading": "Loading inventory...",
+    "totalStock": "Total Stock",
+    "stockValue": "Stock Value",
     "table": {
       "name": "Name",
       "barcode": "Barcode",
@@ -161,6 +273,97 @@
     "recentSales": "Recent Sales",
     "noSales": "No sales today"
   },
+  "analytics": {
+    "title": "Analytics & Reports",
+    "subtitle": "Business insights and performance metrics",
+    "tabs": {
+      "overview": "Overview",
+      "products": "Product Analysis",
+      "performance": "Performance",
+      "inventory": "Inventory Alerts"
+    },
+    "dateRange": {
+      "today": "Today",
+      "yesterday": "Yesterday",
+      "last7Days": "Last 7 Days",
+      "last30Days": "Last 30 Days",
+      "thisWeek": "This Week",
+      "thisMonth": "This Month",
+      "thisYear": "This Year"
+    },
+    "export": {
+      "title": "Export",
+      "pdf": "Export as PDF",
+      "pdfDescription": "Printable report",
+      "excel": "Export as Excel",
+      "excelDescription": "Detailed data sheets"
+    },
+    "revenueTrends": {
+      "title": "Revenue Trends",
+      "subtitle": "Sales performance over time",
+      "totalRevenue": "Total Revenue",
+      "transactions": "Transactions",
+      "avgTransaction": "Avg Transaction",
+      "byPaymentMethod": "Revenue by Payment Method",
+      "line": "Line",
+      "bar": "Bar"
+    },
+    "topProducts": {
+      "title": "Top Products",
+      "byVolume": "Top Products by Sales Volume",
+      "byRevenue": "Top Products by Revenue",
+      "byProfit": "Top Products by Profit Margin",
+      "subtitle": "Best performing products in your inventory",
+      "volume": "Volume",
+      "revenue": "Revenue",
+      "profit": "Profit",
+      "product": "Product",
+      "qtySold": "Qty Sold",
+      "margin": "Margin",
+      "noData": "No sales data for the selected period"
+    },
+    "profitMargin": {
+      "title": "Profit Margin Analysis",
+      "subtitle": "Analyze profitability across your products",
+      "totalProfit": "Total Profit",
+      "totalRevenue": "Total Revenue",
+      "overallMargin": "Overall Margin",
+      "profitDistribution": "Profit Distribution",
+      "lowMarginProducts": "Low Margin Products (<15%)",
+      "tip": "Tip: Consider reviewing pricing for these products or negotiating better supplier costs.",
+      "allHealthy": "All products have healthy profit margins!"
+    },
+    "salesHeatmap": {
+      "title": "Sales Heatmap",
+      "subtitle": "Identify peak hours for staffing optimization",
+      "less": "Less",
+      "more": "More",
+      "peakActivity": "Peak activity:",
+      "salesInHour": "sales in a single hour"
+    },
+    "cashierPerformance": {
+      "title": "Cashier Performance",
+      "subtitle": "Sales metrics per employee",
+      "totalRevenue": "Total Revenue",
+      "transactions": "Transactions",
+      "avgTransaction": "Avg Transaction",
+      "itemsPerSale": "Items/Sale",
+      "cashier": "Cashier",
+      "unknownUser": "Unknown User",
+      "noData": "No sales data available for the selected period"
+    },
+    "lowStockAlerts": {
+      "title": "Low Stock Alerts",
+      "subtitle": "Products that need attention",
+      "critical": "Critical",
+      "warning": "Warning",
+      "low": "Low",
+      "minLevel": "Min level:",
+      "units": "units",
+      "inStock": "in stock",
+      "allStocked": "All products are well stocked!"
+    }
+  },
   "settings": {
     "printer": {
       "title": "Printer Configuration",
@@ -200,5 +403,148 @@
         "title": "Language",
         "select": "Select Language"
     }
+  },
+  "promotions": {
+    "title": "Promotions",
+    "new": "New Promotion",
+    "create": "Create Promotion",
+    "name": "Name",
+    "description": "Description",
+    "descriptionPlaceholder": "Optional details about this promotion",
+    "type": "Type",
+    "types": {
+      "bogo": "Buy X Get Y (BOGO)",
+      "discount_percent": "Percentage Discount",
+      "fixed_amount": "Fixed Amount Off",
+      "happy_hour": "Happy Hour"
+    },
+    "product": "Product",
+    "productBarcode": "Product Barcode/SKU",
+    "productBarcodeRequired": "Product Barcode/SKU *",
+    "productBarcodeOptional": "Product Barcode/SKU (optional)",
+    "scanOrType": "Scan or type barcode",
+    "allProducts": "Leave empty for all products",
+    "rewardProduct": "Reward Product (optional)",
+    "sameAsAbove": "Same as above if empty",
+    "searchInStock": "Search in stock",
+    "noProductsFound": "No products found in stock",
+    "typeManually": "You can type the barcode manually for new products",
+    "discountDetails": "Discount Details",
+    "buyQty": "Buy Qty",
+    "getQty": "Get Qty",
+    "discountPercent": "Discount %",
+    "fixedAmount": "Fixed Amount Off (BGN)",
+    "quickPresets": "Quick Discount Presets",
+    "free": "100% OFF (FREE)",
+    "off75": "75% OFF",
+    "off50": "50% OFF",
+    "off25": "25% OFF",
+    "off10": "10% OFF",
+    "dateRange": "Date Range",
+    "startDate": "Start Date",
+    "endDate": "End Date",
+    "conditions": "Conditions & Restrictions",
+    "maxUses": "Max Uses (optional)",
+    "minPurchase": "Min Purchase Amount (optional)",
+    "daysOfWeek": "Days of Week",
+    "timeRange": "Time Range (optional)",
+    "startTime": "Start Time",
+    "endTime": "End Time",
+    "cancel": "Cancel",
+    "createButton": "Create Promotion",
+    "status": {
+      "expired": "EXPIRED",
+      "scheduled": "SCHEDULED",
+      "limitReached": "LIMIT REACHED",
+      "active": "ACTIVE"
+    },
+    "days": {
+      "sun": "Sun",
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat"
+    },
+    "messages": {
+      "nameRequired": "Promotion name is required",
+      "productRequired": "Product is required for this promotion type",
+      "productNotFound": "Product not found",
+      "created": "Promotion created successfully!",
+      "updated": "Promotion updated successfully!",
+      "deleted": "Promotion deleted",
+      "deleteConfirm": "Are you sure you want to delete this promotion?"
+    }
+  },
+  "auth": {
+    "welcome": "Welcome to Pulse POS",
+    "loginPrompt": "Sign in to continue",
+    "username": "Username",
+    "enterUsername": "Enter your username",
+    "pin": "PIN Code",
+    "pinHelp": "4-6 digit PIN code",
+    "signIn": "Sign In",
+    "signingIn": "Signing in...",
+    "usernameRequired": "Username is required",
+    "pinRequired": "PIN is required",
+    "pinLength": "PIN must be 4-6 digits",
+    "pinDigitsOnly": "PIN must contain only digits",
+    "invalidCredentials": "Invalid username or PIN",
+    "loginError": "Login failed. Please try again.",
+    "loginSuccess": "Login successful",
+    "contactAdmin": "Need help? Contact your administrator"
+  },
+  "cashiers": {
+    "title": "Cashier Management",
+    "subtitle": "Manage cashier accounts and permissions",
+    "addNew": "Add Cashier",
+    "addNewCashier": "Add New Cashier",
+    "editCashier": "Edit Cashier",
+    "noCashiers": "No cashiers found",
+    "addFirstCashier": "Add your first cashier to get started",
+    "username": "Username",
+    "usernamePlaceholder": "Enter username",
+    "usernameRequired": "Username is required",
+    "usernameTaken": "Username is already taken",
+    "pinCode": "PIN Code",
+    "pinRequired": "PIN is required for new cashiers",
+    "pinLength": "PIN must be 4-6 digits",
+    "pinDigitsOnly": "PIN must contain only digits",
+    "pinHelp": "4-6 digit PIN code",
+    "leaveEmptyToKeep": "Leave empty to keep current",
+    "fullName": "Full Name",
+    "fullNamePlaceholder": "Enter full name",
+    "fullNameRequired": "Full name is required",
+    "role": "Role",
+    "activeStatus": "Active (can log in)",
+    "active": "Active",
+    "inactive": "Inactive",
+    "create": "Create",
+    "createSuccess": "Cashier created successfully",
+    "updateSuccess": "Cashier updated successfully",
+    "deleteSuccess": "Cashier deleted successfully",
+    "deleteConfirm": "Are you sure you want to delete",
+    "loadError": "Failed to load cashiers",
+    "saveError": "Failed to save cashier",
+    "deleteError": "Failed to delete cashier",
+    "role": {
+      "admin": "Admin",
+      "manager": "Manager",
+      "cashier": "Cashier"
+    }
+  },
+  "locations": {
+    "title": "Location Management",
+    "multiLocationDashboard": "Multi-Location Dashboard",
+    "dashboardSubtitle": "Overview of all locations",
+    "profitLossReport": "Profit & Loss by Location",
+    "plReportSubtitle": "Financial performance across locations",
+    "location": "Location",
+    "locationDetails": "Location Details",
+    "salesByLocation": "Sales by Location",
+    "stockValueByLocation": "Stock Value by Location",
+    "topPerformers": "Top Performing Locations",
+    "highestMargins": "Highest Profit Margins"
   }
 }

@@ -26,9 +26,12 @@ export const DashboardScreen: React.FC = () => {
       const allSales = await db.sales.toArray();
       const todaySales = allSales.filter(s => new Date(s.created_at || '') >= today);
 
-      // Get products for low stock
+      // Get products for low stock (use quantity_on_hand with fallback to 0)
       const products = await db.products.toArray();
-      const lowStock = products.filter(p => p.stock_quantity <= p.min_stock_level);
+      const lowStock = products.filter(p => {
+        const stockQty = p.quantity_on_hand ?? 0;
+        return stockQty <= (p.min_stock_level ?? 0);
+      });
 
       setStats({
         totalSales: todaySales.length,
