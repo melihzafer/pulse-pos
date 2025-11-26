@@ -13,6 +13,10 @@ import { LocationManagementScreen } from './features/locations/LocationManagemen
 import { StockTransferScreen } from './features/locations/StockTransferScreen';
 import { MultiLocationDashboard } from './features/locations/MultiLocationDashboard';
 import { LocationProfitLossReport } from './features/locations/LocationProfitLossReport';
+import { UserManagementScreen } from './features/employees/UserManagementScreen';
+import { RoleManagementScreen } from './features/employees/RoleManagementScreen';
+import { TimeClockScreen } from './features/employees/TimeClockScreen';
+import { ActivityLogViewer } from './features/employees/ActivityLogViewer';
 import { LoginScreen } from './features/auth/LoginScreen';
 import { Toaster } from 'sonner';
 import { CustomerDisplayScreen } from './features/customer-display/CustomerDisplayScreen';
@@ -189,6 +193,10 @@ function App() {
             {activeTab === 'transfers' && <StockTransferScreen />}
             {activeTab === 'multi-location-dashboard' && <MultiLocationDashboard />}
             {activeTab === 'location-pl' && <LocationProfitLossReport />}
+            {activeTab === 'time-clock' && <TimeClockScreen />}
+            {activeTab === 'users' && <UserManagementScreen />}
+            {activeTab === 'roles' && <RoleManagementScreen />}
+            {activeTab === 'activity-log' && <ActivityLogViewer />}
             {activeTab === 'settings' && <SettingsScreen />}
           </div>
         </div>

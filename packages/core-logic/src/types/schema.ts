@@ -423,3 +423,92 @@ export const LocationPricingSchema = z.object({
   updated_at: z.string().datetime().optional(),
 });
 export type LocationPricing = z.infer<typeof LocationPricingSchema>;
+
+// --- Phase 6: Employee Management & RBAC Schemas ---
+
+export const UserRoleSchema = z.enum(['admin', 'manager', 'cashier', 'stock_clerk']);
+export type UserRole = z.infer<typeof UserRoleSchema>;
+
+export const PermissionCategorySchema = z.enum(['pos', 'inventory', 'reports', 'settings', 'customers', 'employees', 'suppliers', 'locations']);
+export type PermissionCategory = z.infer<typeof PermissionCategorySchema>;
+
+export const PermissionSchema = z.object({
+  id: z.string().uuid(),
+  key: z.string(), // e.g., 'pos.sell', 'inventory.edit', 'reports.view'
+  name: z.string(),
+  description: z.string().optional(),
+  category: PermissionCategorySchema,
+});
+export type Permission = z.infer<typeof PermissionSchema>;
+
+export const RoleSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  name: z.string().min(1),
+  description: z.string().optional(),
+  permissions: z.array(z.string()), // Array of permission keys
+  is_system: z.boolean().default(false), // System roles can't be deleted
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type Role = z.infer<typeof RoleSchema>;
+
+export const UserSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  username: z.string().min(3),
+  email: z.string().email().optional(),
+  password_hash: z.string(), // bcrypt hashed
+  full_name: z.string(),
+  employee_id: z.string().optional(), // Company internal ID
+  location_id: z.string().uuid().optional(), // Assigned location
+  role_id: z.string().uuid(),
+  is_active: z.boolean().default(true),
+  pin_code: z.string().optional(), // 4-6 digit for quick POS login
+  commission_rate: z.number().default(0), // Commission % (0-100)
+  hourly_rate: z.number().optional(), // For payroll
+  last_login: z.string().datetime().optional(),
+  created_at: z.string().datetime().optional(),
+  updated_at: z.string().datetime().optional(),
+});
+export type User = z.infer<typeof UserSchema>;
+
+export const TimeClockEntrySchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  location_id: z.string().uuid().optional(),
+  clock_in: z.string().datetime(),
+  clock_out: z.string().datetime().optional(),
+  break_minutes: z.number().default(0),
+  total_hours: z.number().optional(), // Calculated on clock out
+  overtime_hours: z.number().default(0),
+  notes: z.string().optional(),
+  approved_by: z.string().uuid().optional(),
+  is_approved: z.boolean().default(false),
+  created_at: z.string().datetime().optional(),
+});
+export type TimeClockEntry = z.infer<typeof TimeClockEntrySchema>;
+
+export const ActivityLogActionSchema = z.enum([
+  'create', 'update', 'delete', 'login', 'logout', 'refund', 'void', 
+  'discount', 'price_override', 'stock_adjust', 'permission_change',
+  'clock_in', 'clock_out', 'settings_change'
+]);
+export type ActivityLogAction = z.infer<typeof ActivityLogActionSchema>;
+
+export const ActivityLogSchema = z.object({
+  id: z.string().uuid(),
+  workspace_id: z.string().uuid(),
+  user_id: z.string().uuid(),
+  action: ActivityLogActionSchema,
+  entity_type: z.string(), // 'sale', 'product', 'customer', 'user', etc.
+  entity_id: z.string().optional(),
+  before_value: z.any().optional(), // JSON snapshot before change
+  after_value: z.any().optional(), // JSON snapshot after change
+  details: z.string().optional(), // Human-readable summary
+  ip_address: z.string().optional(),
+  device_info: z.string().optional(),
+  created_at: z.string().datetime(),
+});
+export type ActivityLog = z.infer<typeof ActivityLogSchema>;

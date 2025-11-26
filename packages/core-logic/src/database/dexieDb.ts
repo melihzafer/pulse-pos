@@ -3,7 +3,8 @@ import type {
   Product, Sale, SaleItem, StockMovement, Workspace, ParkedSale, Shift, CashTransaction, 
   Customer, ProductBarcode, Promotion, Supplier, ProductSupplier, PurchaseOrder, PurchaseOrderItem,
   GiftCard, CreditTransaction, LayawayOrder, LayawayOrderItem, LayawayPayment,
-  Location, StockTransfer, StockTransferItem, LocationPricing
+  Location, StockTransfer, StockTransferItem, LocationPricing,
+  User, Role, Permission, TimeClockEntry, ActivityLog
 } from '../types';
 
 // Extended types for local storage with sync metadata
@@ -160,6 +161,33 @@ export interface LocalLocationPricing extends LocationPricing {
   _deleted?: boolean;
 }
 
+// Phase 6: Employee Management & RBAC
+export interface LocalUser extends User {
+  _synced?: boolean;
+  _dirty?: boolean;
+  _deleted?: boolean;
+}
+
+export interface LocalRole extends Role {
+  _synced?: boolean;
+  _dirty?: boolean;
+  _deleted?: boolean;
+}
+
+export interface LocalPermission extends Permission {
+  _synced?: boolean;
+}
+
+export interface LocalTimeClockEntry extends TimeClockEntry {
+  _synced?: boolean;
+  _dirty?: boolean;
+  _deleted?: boolean;
+}
+
+export interface LocalActivityLog extends ActivityLog {
+  _synced?: boolean;
+}
+
 export interface SyncMetadata {
   id?: number;
   key: string; // e.g., 'products_last_sync', 'sales_last_sync'
@@ -195,6 +223,12 @@ export class PulseDatabase extends Dexie {
   stock_transfers!: Table<LocalStockTransfer, string>;
   stock_transfer_items!: Table<LocalStockTransferItem, string>;
   location_pricing!: Table<LocalLocationPricing, string>;
+  // Phase 6: Employee Management & RBAC
+  users!: Table<LocalUser, string>;
+  roles!: Table<LocalRole, string>;
+  permissions!: Table<LocalPermission, string>;
+  time_clock_entries!: Table<LocalTimeClockEntry, string>;
+  activity_logs!: Table<LocalActivityLog, string>;
 
   constructor() {
     super('PulseDB');
@@ -330,6 +364,15 @@ export class PulseDatabase extends Dexie {
           });
         }
       });
+    });
+
+    // Phase 6: Employee Management & RBAC
+    this.version(15).stores({
+      users: 'id, workspace_id, username, email, location_id, role_id, is_active, pin_code, *_synced, *_dirty',
+      roles: 'id, workspace_id, name, is_system, *_synced, *_dirty',
+      permissions: 'id, key, category, *_synced',
+      time_clock_entries: 'id, workspace_id, user_id, location_id, clock_in, is_approved, *_synced, *_dirty',
+      activity_logs: 'id, workspace_id, user_id, action, entity_type, entity_id, created_at, *_synced'
     });
   }
 }

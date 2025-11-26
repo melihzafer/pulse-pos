@@ -7,3 +7,5 @@ export * from './GiftCardService';
 export * from './LayawayService';
 export * from './LocationService';
 export * from './StockTransferService';
+export * from './AuthService';
+export * from './TimeClockService';
