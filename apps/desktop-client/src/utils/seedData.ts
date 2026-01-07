@@ -1,4 +1,4 @@
-import { db } from '@pulse/core-logic';
+import { MyDatabase } from '@pulse/core-logic';
 import { v4 as uuidv4 } from 'uuid';
 
 const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
@@ -12,7 +12,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'COKE-330',
     cost_price: 0.80,
     sale_price: 1.50,
-    quantity_on_hand: 100,
+    stock_quantity: 100,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -29,7 +29,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'SPRITE-330',
     cost_price: 0.75,
     sale_price: 1.50,
-    quantity_on_hand: 85,
+    stock_quantity: 85,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -46,7 +46,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'FANTA-330',
     cost_price: 0.75,
     sale_price: 1.50,
-    quantity_on_hand: 78,
+    stock_quantity: 78,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -63,7 +63,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'WATER-500',
     cost_price: 0.30,
     sale_price: 0.80,
-    quantity_on_hand: 200,
+    stock_quantity: 200,
     min_stock_level: 50,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -80,7 +80,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'COFFEE-CAP',
     cost_price: 1.20,
     sale_price: 2.50,
-    quantity_on_hand: 45,
+    stock_quantity: 45,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -97,7 +97,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'CHOC-MILKA',
     cost_price: 0.90,
     sale_price: 1.80,
-    quantity_on_hand: 55,
+    stock_quantity: 55,
     min_stock_level: 10,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -114,7 +114,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'CHIPS-LAYS',
     cost_price: 0.70,
     sale_price: 1.40,
-    quantity_on_hand: 120,
+    stock_quantity: 120,
     min_stock_level: 30,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -131,7 +131,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'ENERGY-RB',
     cost_price: 1.50,
     sale_price: 3.00,
-    quantity_on_hand: 60,
+    stock_quantity: 60,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -148,7 +148,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'SAND-HC',
     cost_price: 2.00,
     sale_price: 4.50,
-    quantity_on_hand: 15,
+    stock_quantity: 15,
     min_stock_level: 5,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -165,7 +165,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'JUICE-OR',
     cost_price: 1.80,
     sale_price: 3.50,
-    quantity_on_hand: 35,
+    stock_quantity: 35,
     min_stock_level: 10,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -182,7 +182,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'GUM-ORBIT',
     cost_price: 0.40,
     sale_price: 1.00,
-    quantity_on_hand: 90,
+    stock_quantity: 90,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -199,7 +199,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'ICE-MAGNUM',
     cost_price: 1.50,
     sale_price: 3.20,
-    quantity_on_hand: 40,
+    stock_quantity: 40,
     min_stock_level: 10,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -216,7 +216,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'BREAD-W',
     cost_price: 0.60,
     sale_price: 1.20,
-    quantity_on_hand: 25,
+    stock_quantity: 25,
     min_stock_level: 5,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -233,7 +233,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'MILK-1L',
     cost_price: 1.20,
     sale_price: 2.30,
-    quantity_on_hand: 50,
+    stock_quantity: 50,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -250,7 +250,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'BEER-HEIN',
     cost_price: 1.00,
     sale_price: 2.20,
-    quantity_on_hand: 72,
+    stock_quantity: 72,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -267,7 +267,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'BISCUIT-OREO',
     cost_price: 1.00,
     sale_price: 2.00,
-    quantity_on_hand: 65,
+    stock_quantity: 65,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -284,7 +284,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'SHAMPOO-HS',
     cost_price: 3.50,
     sale_price: 6.80,
-    quantity_on_hand: 25,
+    stock_quantity: 25,
     min_stock_level: 10,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -301,7 +301,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'SOAP-DOVE',
     cost_price: 1.20,
     sale_price: 2.50,
-    quantity_on_hand: 0,
+    stock_quantity: 0,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -318,7 +318,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'TOOTHPASTE-COL',
     cost_price: 2.00,
     sale_price: 4.20,
-    quantity_on_hand: 30,
+    stock_quantity: 30,
     min_stock_level: 12,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -335,7 +335,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'YOGURT-DAN',
     cost_price: 0.80,
     sale_price: 1.60,
-    quantity_on_hand: 40,
+    stock_quantity: 40,
     min_stock_level: 20,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -352,7 +352,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'CHEESE-GOUDA',
     cost_price: 4.50,
     sale_price: 8.90,
-    quantity_on_hand: 18,
+    stock_quantity: 18,
     min_stock_level: 8,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -369,7 +369,7 @@ const SAMPLE_PRODUCTS = [
     sku: 'EGGS-12',
     cost_price: 2.50,
     sale_price: 4.80,
-    quantity_on_hand: 55,
+    stock_quantity: 55,
     min_stock_level: 15,
     is_active: true,
     updated_at: new Date().toISOString(),
@@ -478,26 +478,30 @@ const SAMPLE_CASHIERS = [
 /**
  * Seed the local database with sample products and customers
  */
-export async function seedDatabase() {
+export async function seedDatabase(db: MyDatabase) {
   try {
     console.log('📦 Starting database seed...');
 
     // Clear old data first to prevent schema conflicts
     console.log('🗑️  Clearing existing products, customers, and cashiers...');
-    await db.products.clear();
-    await db.customers.clear();
-    await db.cashiers.clear();
+    await db.products.find().remove();
+    await db.customers.find().remove();
+    await db.cashiers.find().remove();
 
+    // Map legacy fields if necessary, or assume types are correct now (we updated stock_quantity)
     // Seed products
-    await db.products.bulkAdd(SAMPLE_PRODUCTS);
+    await db.products.bulkInsert(SAMPLE_PRODUCTS.map(p => ({
+        ...p,
+        stock_quantity: (p as any).stock_quantity ?? p.stock_quantity ?? 0
+    })));
     console.log(`✅ Seeded ${SAMPLE_PRODUCTS.length} products`);
     
     // Seed customers
-    await db.customers.bulkAdd(SAMPLE_CUSTOMERS);
+    await db.customers.bulkInsert(SAMPLE_CUSTOMERS);
     console.log(`✅ Seeded ${SAMPLE_CUSTOMERS.length} customers`);
     
     // Seed cashiers
-    await db.cashiers.bulkAdd(SAMPLE_CASHIERS);
+    await db.cashiers.bulkInsert(SAMPLE_CASHIERS);
     console.log(`✅ Seeded ${SAMPLE_CASHIERS.length} cashiers`);
     
     return {

@@ -74,7 +74,7 @@ export class MarketService {
   async applyPromotions(cartItems: CartItem[]): Promise<CartItem[]> {
     try {
       const activePromotions = await db.promotions
-        .filter(p => p.is_active === true || p.is_active === 1)
+        .filter(p => p.is_active === true)
         .toArray();
 
       console.log('[MarketService] Found active promotions:', activePromotions.length);
@@ -129,7 +129,7 @@ export class MarketService {
       applicablePromotions.sort((a, b) => (b.priority || 0) - (a.priority || 0));
 
       // Clear existing promotions before re-applying (critical for cart updates)
-      let updatedCart = cartItems.map(item => ({
+      let updatedCart: CartItem[] = cartItems.map(item => ({
         ...item,
         discount: 0,
         appliedPromotionId: undefined
@@ -159,7 +159,7 @@ export class MarketService {
    */
   async getActivePromotions(): Promise<Promotion[]> {
     const activePromotions = await db.promotions
-      .filter(p => p.is_active === true || p.is_active === 1)
+      .filter(p => p.is_active === true)
       .toArray();
 
     const now = new Date();

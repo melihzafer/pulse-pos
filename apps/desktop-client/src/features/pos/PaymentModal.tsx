@@ -291,7 +291,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6 overflow-y-auto">
+        <div className="p-6 space-y-6 overflow-y-auto scrollbar-thin">
           {/* Total Amount & Currency Toggle */}
           <div className="text-center relative">
             <div className="absolute right-0 top-0">

@@ -49,9 +49,9 @@ export const MultiLocationDashboard: React.FC = () => {
 
         const todaySales = sales.reduce((sum, sale) => sum + sale.total, 0);
         const todayTransactions = sales.length;
-        const totalStock = inventory.reduce((sum, item) => sum + item.quantity_on_hand, 0);
+        const totalStock = inventory.reduce((sum, item) => sum + item.stock_quantity, 0);
         const stockValue = inventory.reduce(
-          (sum, item) => sum + item.quantity_on_hand * item.cost_price,
+          (sum, item) => sum + item.stock_quantity * item.cost_price,
           0
         );
 
@@ -98,7 +98,7 @@ export const MultiLocationDashboard: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col space-y-6 overflow-y-auto p-6">
+    <div className="h-full flex flex-col space-y-6 overflow-y-auto scrollbar-thin p-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>

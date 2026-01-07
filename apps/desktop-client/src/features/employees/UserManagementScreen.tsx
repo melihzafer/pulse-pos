@@ -21,6 +21,7 @@ import {
 import { AuthService } from '@pulse/core-logic';
 import { RequirePermission } from '../../components/RequirePermission';
 import { usePermission } from '../../hooks/usePermission';
+import { useSettingsStore } from '../settings/store';
 
 // UI-friendly user interface
 interface User {
@@ -79,6 +80,7 @@ interface Role {
 type ModalMode = 'create' | 'edit' | 'password' | null;
 
 export const UserManagementScreen: React.FC = () => {
+  const { workspaceId } = useSettingsStore();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -93,8 +95,8 @@ export const UserManagementScreen: React.FC = () => {
     try {
       setLoading(true);
       const [usersData, rolesData] = await Promise.all([
-        AuthService.getAllUsers(),
-        AuthService.getRoles(),
+        AuthService.getUsers(workspaceId),
+        AuthService.getRoles(workspaceId),
       ]);
       // Map database users to UI-friendly format
       const mappedUsers = usersData.map(mapDbUserToUser);
@@ -110,7 +112,7 @@ export const UserManagementScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, workspaceId]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -179,7 +181,7 @@ export const UserManagementScreen: React.FC = () => {
     try {
       if (modalMode === 'create') {
         await AuthService.createUser({
-          workspaceId: 'default',
+          workspaceId: workspaceId,
           username: data.email!.split('@')[0], // Use email prefix as username
           email: data.email!,
           fullName: `${data.first_name} ${data.last_name}`,
@@ -268,7 +270,7 @@ export const UserManagementScreen: React.FC = () => {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto scrollbar-thin p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />

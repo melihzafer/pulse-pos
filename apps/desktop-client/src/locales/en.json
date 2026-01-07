@@ -516,7 +516,7 @@
     "fullName": "Full Name",
     "fullNamePlaceholder": "Enter full name",
     "fullNameRequired": "Full name is required",
-    "role": "Role",
+    "roleLabel": "Role",
     "activeStatus": "Active (can log in)",
     "active": "Active",
     "inactive": "Inactive",
@@ -528,7 +528,7 @@
     "loadError": "Failed to load cashiers",
     "saveError": "Failed to save cashier",
     "deleteError": "Failed to delete cashier",
-    "role": {
+    "roles": {
       "admin": "Admin",
       "manager": "Manager",
       "cashier": "Cashier"

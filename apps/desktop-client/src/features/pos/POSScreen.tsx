@@ -7,11 +7,16 @@ import { ShiftModal } from './ShiftModal';
 import { CustomerModal } from './CustomerModal';
 import { SellGiftCardModal } from './SellGiftCardModal';
 import { CustomerProfileScreen } from '../customers/CustomerProfileScreen';
-import { useCartStore, useAuthStore, Product, db, PaymentMethod, MarketService, formatCurrency, LoyaltyService } from '@pulse/core-logic';
+
+import { useCartStore, useAuthStore, Product, PaymentMethod, MarketService, formatCurrency, LoyaltyService } from '@pulse/core-logic';
 import { useTranslation } from 'react-i18next';
+import { useRxCollection, useRxDB } from 'rxdb-hooks';
 import { toast } from 'sonner';
 import { Monitor, Lock, Settings, Gift } from 'lucide-react';
 import { sendNotification } from '../../utils/notifications';
+import { ConnectionStatus } from '../../components/common/ConnectionStatus';
+import { ShortcutsHelpModal } from './ShortcutsHelpModal';
+import { useSettingsStore } from '../settings/store';
 
 const marketService = new MarketService();
 
@@ -21,6 +26,11 @@ interface POSScreenProps {
 
 export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
+  const db = useRxDB();
+  const productsCollection = useRxCollection<Product>('products');
+  const salesCollection = useRxCollection('sales');
+  
   const { addToCart, clearCart, getTotal, items, customer } = useCartStore();
   const { currentCashier } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
@@ -30,6 +40,7 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   const [isShiftModalOpen, setIsShiftModalOpen] = useState(false);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [isGiftCardModalOpen, setIsGiftCardModalOpen] = useState(false);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
   const [viewingCustomerId, setViewingCustomerId] = useState<string | null>(null);
   const [lastChange, setLastChange] = useState(0);
   const [lastTotal, setLastTotal] = useState(0);
@@ -38,6 +49,7 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   const [lastPaymentMethod, setLastPaymentMethod] = useState<PaymentMethod>('cash');
   const [enableShifts, setEnableShifts] = useState(true);
 
+  // ... (Settings and effect logic remains the same)
   useEffect(() => {
     const loadSettings = () => {
       const savedSettings = localStorage.getItem('pulse-settings');
@@ -68,15 +80,15 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     return () => window.removeEventListener('pulse-settings-changed', handleSettingsChange);
   }, []);
 
-  // Load products from Dexie
-  useEffect(() => {
-    loadProducts();
-  }, []);
-
   const loadProducts = async () => {
+    if (!productsCollection) return;
     try {
-      const allProducts = await db.products.toArray();
-      setProducts(allProducts);
+      const allProducts = await productsCollection.find({
+        selector: {
+          workspace_id: workspaceId
+        }
+      }).exec();
+      setProducts(allProducts.map(doc => doc.toJSON()) as Product[]);
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
@@ -84,10 +96,19 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     }
   };
 
+  useEffect(() => {
+    if (productsCollection) {
+        loadProducts();
+        const sub = productsCollection.$.subscribe(() => {
+            loadProducts();
+        });
+        return () => sub.unsubscribe();
+    }
+  }, [productsCollection, workspaceId]);
+
   // Global keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // F5 for Pay (handled in Cart component, but we can add logic here too)
       if (e.key === 'F5') {
         e.preventDefault();
         if (items.length > 0) {
@@ -95,7 +116,6 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         }
       }
 
-      // Escape to clear cart
       if (e.key === 'Escape' && !isPaymentModalOpen && !isReceiptModalOpen) {
         const confirmClear = window.confirm(t('cart.clearConfirm'));
         if (confirmClear) {
@@ -114,19 +134,22 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     let lastKeyTime = Date.now();
 
     const handleGlobalKeyDown = async (e: KeyboardEvent) => {
-      // Ignore if typing in an input
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
       }
 
-      // F1 to focus search
       if (e.key === 'F1') {
         e.preventDefault();
-        document.getElementById('product-search')?.focus();
+        setIsHelpModalOpen(true);
         return;
       }
 
-      // F5 to pay
+      if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+         e.preventDefault();
+         setIsHelpModalOpen(true);
+         return;
+      }
+
       if (e.key === 'F5') {
         e.preventDefault();
         if (items.length > 0) {
@@ -135,10 +158,20 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         return;
       }
 
-      // Barcode scanner buffer handling
+      if (e.key === 'F6') {
+        e.preventDefault();
+        if (items.length > 0) {
+          const note = window.prompt(t('cart.parkNote'));
+          // @ts-ignore - parkOrder is in useCartStore, ignore tsc complaint for now if any
+          useCartStore.getState().parkOrder(note || undefined);
+          toast.success(t('cart.parkSuccess'));
+        }
+        return;
+      }
+
       const currentTime = Date.now();
       if (currentTime - lastKeyTime > 100) {
-        buffer = ''; // Reset buffer if too much time passed (manual typing vs scanner)
+        buffer = '';
       }
       lastKeyTime = currentTime;
 
@@ -175,10 +208,9 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, [items.length, addToCart, t]);
 
-  // Broadcast cart changes to customer display
+  // Broadcast cart changes
   useEffect(() => {
     const channel = new BroadcastChannel('customer-display');
-    
     const broadcastCart = () => {
       channel.postMessage({
         type: 'CART_UPDATE',
@@ -188,9 +220,7 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         },
       });
     };
-
     broadcastCart();
-
     return () => channel.close();
   }, [items, getTotal]);
 
@@ -204,15 +234,14 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   };
 
   const handleGiftCardSold = (amount: number, cardNumber: string) => {
-    // Create a virtual product for gift card in cart
     const giftCardProduct: Product = {
       id: `giftcard-${cardNumber}`,
-      workspace_id: '00000000-0000-0000-0000-000000000000',
+      workspace_id: workspaceId,
       name: `Gift Card - ${cardNumber}`,
       barcode: cardNumber,
       sku: cardNumber,
       sale_price: amount,
-      cost_price: 0, // No cost for gift card
+      cost_price: 0,
       stock_quantity: 1,
       min_stock_level: 0,
       is_quick_key: false,
@@ -231,7 +260,6 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
       setLastTotal(currentTotal);
       setLastChange(change);
 
-      // Check for High Value Sale
       const settingsStr = localStorage.getItem('pulse-settings');
       const settings = settingsStr ? JSON.parse(settingsStr) : {};
       const highValueThreshold = settings.notifications?.highValueThreshold || 1000;
@@ -245,7 +273,6 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         });
       }
 
-      // Broadcast payment success
       const channel = new BroadcastChannel('customer-display');
       channel.postMessage({
         type: 'PAYMENT_COMPLETE',
@@ -256,19 +283,18 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
       });
       channel.close();
 
-      // Create sale record
       const sale = {
         id: crypto.randomUUID(),
-        workspace_id: '00000000-0000-0000-0000-000000000000', // TODO: Get from settings
+        workspace_id: workspaceId,
         total_amount: currentTotal,
         payment_method: method,
-        payments: payments, // Store split payments if any
+        payments: payments,
         status: 'completed' as const,
         created_at: new Date().toISOString(),
-        customer_id: customer?.id, // Link sale to customer
+        customer_id: customer?.id,
         items: items.map(item => ({
           id: crypto.randomUUID(),
-          sale_id: '', // Will be set by DB or ignored if not relational
+          sale_id: '',
           product_id: item.product.id,
           product_name_snapshot: item.product.name,
           cost_snapshot: item.product.cost_price,
@@ -278,43 +304,45 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         })),
       };
 
-      // Save to Dexie
-      const saleId = await db.sales.add(sale);
+      let saleId = '';
+      if (salesCollection) {
+          const doc = await salesCollection.insert(sale);
+          saleId = doc.id;
+      }
       setLastSaleId(saleId);
 
-      // Process Loyalty
       if (sale.customer_id) {
         try {
           await LoyaltyService.processSale(sale);
         } catch (error) {
           console.error('Loyalty processing failed:', error);
-          // Don't block the sale completion for loyalty errors
         }
       }
       
-      // Update stock
-      for (const item of items) {
-        const product = await db.products.get(item.product.id);
-        if (product) {
-          const newQuantity = product.stock_quantity - item.quantity;
-          await db.products.update(item.product.id, {
-            stock_quantity: newQuantity
-          });
-
-          // Check Low Stock
-          const lowStockThreshold = settings.notifications?.lowStockThreshold || 5;
-          if (newQuantity <= lowStockThreshold) {
-             sendNotification({
-              title: t('notifications.lowStock', 'Low Stock Alert'),
-              message: t('notifications.lowStockMessage', 'Product {{product}} is low on stock ({{quantity}})', { product: product.name, quantity: newQuantity }),
-              type: 'warning',
-              category: 'lowStock'
+      if (productsCollection) {
+        for (const item of items) {
+            const productDoc = await productsCollection.findOne(item.product.id).exec();
+            if (productDoc) {
+            const currentQty = productDoc.get('stock_quantity') as number;
+            const newQuantity = currentQty - item.quantity;
+            
+            await productDoc.patch({
+                stock_quantity: newQuantity
             });
-          }
+
+            const lowStockThreshold = settings.notifications?.lowStockThreshold || 5;
+            if (newQuantity <= lowStockThreshold) {
+                sendNotification({
+                title: t('notifications.lowStock', 'Low Stock Alert'),
+                message: t('notifications.lowStockMessage', 'Product {{product}} is low on stock ({{quantity}})', { product: productDoc.get('name'), quantity: newQuantity }),
+                type: 'warning',
+                category: 'lowStock'
+                });
+            }
+            }
         }
       }
 
-      // Save items and payment info before clearing cart
       setLastSaleItems([...items]);
       setLastPaymentMethod(method);
       
@@ -336,13 +364,12 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-blue-600 dark:text-blue-400 text-xl">{t('common.loading')}</div>
+      <div className="flex items-center justify-center h-full bg-slate-50 dark:bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
-  // Show customer profile screen
   if (viewingCustomerId) {
     return (
       <CustomerProfileScreen
@@ -353,53 +380,59 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
   }
 
   return (
-    <div className="flex h-screen bg-gray-100 dark:bg-slate-900 overflow-hidden">
+    <div className="flex h-screen bg-gradient-to-br from-slate-50 via-blue-50/20 to-orange-50/10 dark:from-slate-950 dark:via-slate-900 dark:to-blue-950/20 overflow-hidden">
       {/* Left Side: Product Grid */}
-      <div className="flex-1 flex flex-col min-w-0 max-w-[calc(100%-450px)]">
-        {/* Header Bar */}
-        <div className="h-14 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between px-4 shrink-0">
+      <div className="flex-1 flex flex-col min-w-0 max-w-[calc(100%-480px)]">
+        {/* Header Bar - Glass Effect */}
+        <div className="h-16 glass-panel border-b-0 m-4 mb-2 rounded-2xl flex items-center justify-between px-6 shrink-0 z-20">
           {/* Cashier Info */}
           {currentCashier && (
-            <div className="flex items-center gap-2 text-sm">
-              <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center text-white font-semibold">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl shadow-lg shadow-blue-500/20 flex items-center justify-center text-white font-bold text-lg">
                 {currentCashier.full_name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <p className="font-semibold text-gray-900 dark:text-white">{currentCashier.full_name}</p>
-                <p className="text-xs text-gray-500 dark:text-slate-400">{t(`cashiers.role.${currentCashier.role}`, currentCashier.role)}</p>
+                <p className="font-bold text-gray-900 dark:text-white leading-tight">{currentCashier.full_name}</p>
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                  <p className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wider">
+                    {t(`cashiers.role.${currentCashier.role}`, currentCashier.role)}
+                  </p>
+                </div>
               </div>
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-center">
+            <ConnectionStatus />
             <button
               onClick={() => setIsGiftCardModalOpen(true)}
-              className="p-2 hover:bg-purple-100 dark:hover:bg-purple-900/20 rounded-lg text-purple-600 dark:text-purple-400 flex items-center gap-2"
+              className="p-2.5 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-xl text-purple-600 dark:text-purple-400 flex items-center gap-2 transition-colors border border-transparent hover:border-purple-200 dark:hover:border-purple-800/50"
               title={t('giftCard.sell', 'Sell Gift Card')}
             >
               <Gift size={20} />
-              <span className="text-sm font-medium hidden sm:inline">{t('giftCard.sell', 'Gift Card')}</span>
+              <span className="text-sm font-semibold hidden sm:inline">{t('giftCard.sell', 'Gift Card')}</span>
             </button>
             <button
               onClick={openCustomerDisplay}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-2"
+              className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-600 dark:text-slate-300 flex items-center gap-2 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
               title={t('customerDisplay.display')}
             >
               <Monitor size={20} />
-              <span className="text-sm font-medium hidden sm:inline">{t('customerDisplay.display')}</span>
+              <span className="text-sm font-semibold hidden sm:inline">{t('customerDisplay.display')}</span>
             </button>
             {enableShifts && (
               <button
                 onClick={() => setIsShiftModalOpen(true)}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-600 dark:text-slate-300 flex items-center gap-2"
+                className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-600 dark:text-slate-300 flex items-center gap-2 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
                 title={t('shift.management')}
               >
                 <Lock size={20} />
-                <span className="text-sm font-medium hidden sm:inline">{t('shift.management')}</span>
+                <span className="text-sm font-semibold hidden sm:inline">{t('shift.management')}</span>
               </button>
             )}
             <button
               onClick={() => onNavigate?.('settings')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg text-gray-600 dark:text-slate-300"
+              className="p-2.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl text-slate-600 dark:text-slate-300 transition-colors border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
               title={t('settings.title')}
             >
               <Settings size={20} />
@@ -407,18 +440,21 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
           </div>
         </div>
 
-        <div className="flex-1 p-4 overflow-hidden px-12">
-          <ProductGrid 
-            products={products} 
-            onProductClick={handleProductClick}
-            onProductsChange={loadProducts}
-          />
+        <div className="flex-1 p-4 pt-2 overflow-hidden px-4 pb-4">
+          <div className="h-full glass-panel rounded-2xl overflow-hidden p-6 shadow-xl">
+             <ProductGrid 
+              products={products} 
+              onProductClick={handleProductClick}
+              onProductsChange={loadProducts}
+            />
+          </div>
         </div>
       </div>
 
-      {/* Right Side: Cart */}
-      <div className="w-[500px] top-0 right-0 fixed bg-white h-[100vh] dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 flex flex-col shadow-xl z-10">
-        <div className="flex-1 p-4 overflow-hidden">
+      {/* Right Side: Cart - Glass Panel */}
+      <div className="w-[480px] top-0 right-0 h-full p-4 pl-0">
+        <div className="h-full glass-panel rounded-2xl shadow-2xl flex flex-col border-l-0 overflow-hidden relative">
+          <div className="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-md -z-10"></div>
           <Cart 
             onPay={() => setIsPaymentModalOpen(true)} 
             products={products}
@@ -462,6 +498,10 @@ export const POSScreen: React.FC<POSScreenProps> = ({ onNavigate }) => {
         isOpen={isGiftCardModalOpen}
         onClose={() => setIsGiftCardModalOpen(false)}
         onSold={handleGiftCardSold}
+      />
+      <ShortcutsHelpModal
+        isOpen={isHelpModalOpen}
+        onClose={() => setIsHelpModalOpen(false)}
       />
     </div>
   );

@@ -296,7 +296,7 @@ export const ActivityLogViewer: React.FC = () => {
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto scrollbar-thin p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 text-indigo-500 animate-spin" />

@@ -476,7 +476,7 @@
     "fullName": "Tam Ad",
     "fullNamePlaceholder": "Tam ad girin",
     "fullNameRequired": "Tam ad gereklidir",
-    "role": "Rol",
+    "roleLabel": "Rol",
     "activeStatus": "Aktif (giriş yapabilir)",
     "active": "Aktif",
     "inactive": "Aktif Değil",
@@ -488,7 +488,7 @@
     "loadError": "Kasiyerler yüklenemedi",
     "saveError": "Kasiyer kaydedilemedi",
     "deleteError": "Kasiyer silinemedi",
-    "role": {
+    "roles": {
       "admin": "Yönetici",
       "manager": "Müdür",
       "cashier": "Kasiyer"

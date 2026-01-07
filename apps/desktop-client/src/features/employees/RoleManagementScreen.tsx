@@ -16,6 +16,7 @@ import {
 import { AuthService } from '@pulse/core-logic';
 import { RequirePermission } from '../../components/RequirePermission';
 import { usePermission } from '../../hooks/usePermission';
+import { useSettingsStore } from '../settings/store';
 
 interface Role {
   id: string;
@@ -49,6 +50,7 @@ const AVAILABLE_PERMISSIONS = [
 type ModalMode = 'create' | 'edit' | null;
 
 export const RoleManagementScreen: React.FC = () => {
+  const { workspaceId } = useSettingsStore();
   const [roles, setRoles] = useState<Role[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
@@ -61,7 +63,7 @@ export const RoleManagementScreen: React.FC = () => {
   const loadData = useCallback(async () => {
     try {
       setLoading(true);
-      const rolesData = await AuthService.getRoles();
+      const rolesData = await AuthService.getRoles(workspaceId);
       setRoles(rolesData as Role[]);
     } catch (error) {
       console.error('Failed to load roles:', error);
@@ -73,7 +75,7 @@ export const RoleManagementScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, workspaceId]);
 
   const showNotification = (type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -119,7 +121,12 @@ export const RoleManagementScreen: React.FC = () => {
   const handleSaveRole = async (data: { name: string; description: string; permissions: string[] }) => {
     try {
       if (modalMode === 'create') {
-        await AuthService.createRole(data.name, data.permissions, data.description);
+        await AuthService.createRole({
+          workspaceId,
+          name: data.name,
+          permissions: data.permissions,
+          description: data.description,
+        });
         showNotification('success', 'Role created successfully');
       } else if (modalMode === 'edit' && selectedRole) {
         await AuthService.updateRole(selectedRole.id, {
@@ -201,7 +208,7 @@ export const RoleManagementScreen: React.FC = () => {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className="flex-1 overflow-auto scrollbar-thin p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />

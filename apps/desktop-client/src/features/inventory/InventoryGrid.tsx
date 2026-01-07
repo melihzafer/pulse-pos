@@ -1,27 +1,37 @@
 import React, { useEffect, useState } from 'react';
-import { Edit2, Trash2, Plus } from 'lucide-react';
-import { Product, db } from '@pulse/core-logic';
+import { Edit2, Trash2, Plus, PackageMinus } from 'lucide-react';
+import { Product } from '@pulse/core-logic';
+import { useRxCollection } from 'rxdb-hooks';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { ProductModal } from './ProductModal';
+import { StockAdjustmentModal } from './StockAdjustmentModal';
+import { useSettingsStore } from '../settings/store';
 
 export const InventoryGrid: React.FC = () => {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
+  const collection = useRxCollection<Product>('products');
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortField, setSortField] = useState<keyof Product>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>(undefined);
+  const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false);
+  const [adjustingProduct, setAdjustingProduct] = useState<Product | undefined>(undefined);
 
   useEffect(() => {
-    loadProducts();
-  }, []);
+    if (collection) {
+        loadProducts();
+    }
+  }, [collection]);
 
   const loadProducts = async () => {
+    if (!collection) return;
     try {
-      const allProducts = await db.products.toArray();
-      setProducts(allProducts);
+      const allProducts = await collection.find().exec();
+      setProducts(allProducts.map(doc => doc.toJSON()) as Product[]);
     } catch (error) {
       console.error('Failed to load products:', error);
     } finally {
@@ -40,23 +50,30 @@ export const InventoryGrid: React.FC = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (window.confirm(t('common.deleteConfirm'))) {
-      await db.products.delete(id);
-      loadProducts();
+    if (window.confirm(t('common.deleteConfirm')) && collection) {
+      const product = await collection.findOne(id).exec();
+      if (product) {
+        await product.remove();
+        loadProducts();
+      }
     }
   };
 
   const handleSave = async (productData: Partial<Product>) => {
+    if (!collection) return;
     try {
       if (editingProduct) {
-        await db.products.update(editingProduct.id, {
-          ...productData,
-          updated_at: new Date().toISOString()
-        });
+        const product = await collection.findOne(editingProduct.id).exec();
+        if (product) {
+            await product.patch({
+                ...productData,
+                updated_at: new Date().toISOString()
+            });
+        }
       } else {
-        await db.products.add({
+        await collection.insert({
           id: crypto.randomUUID(),
-          workspace_id: '00000000-0000-0000-0000-000000000000', // TODO: Get from settings
+          workspace_id: workspaceId,
           ...productData,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -141,11 +158,12 @@ export const InventoryGrid: React.FC = () => {
               >
                 {t('inventory.table.barcode')} {sortField === 'barcode' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
+
               <th 
-                onClick={() => handleSort('quantity_on_hand')}
+                onClick={() => handleSort('stock_quantity')}
                 className="text-right p-3 text-sm font-semibold text-gray-600 dark:text-slate-300 cursor-pointer hover:text-gray-900 dark:hover:text-white transition-colors"
               >
-                {t('inventory.table.stock')} {sortField === 'quantity_on_hand' && (sortDirection === 'asc' ? '↑' : '↓')}
+                {t('inventory.table.stock')} {sortField === 'stock_quantity' && (sortDirection === 'asc' ? '↑' : '↓')}
               </th>
               <th 
                 onClick={() => handleSort('cost_price')}
@@ -169,14 +187,14 @@ export const InventoryGrid: React.FC = () => {
           </thead>
           <tbody>
             {sortedProducts.map((product) => {
-              const stockQty = product.quantity_on_hand ?? 0;
+              const stockQty = product.stock_quantity ?? 0;
               const status = getStockStatus(stockQty, product.min_stock_level);
               return (
                 <tr key={product.id} className="border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/30 transition-colors">
                   <td className="p-3 text-gray-900 dark:text-white font-medium">{product.name}</td>
                   <td className="p-3 text-gray-500 dark:text-slate-400 font-mono text-sm">{product.barcode || '-'}</td>
                   <td className="p-3 text-right font-mono text-gray-900 dark:text-white">
-                    {typeof product.quantity_on_hand === 'number' ? product.quantity_on_hand : (
+                    {typeof product.stock_quantity === 'number' ? product.stock_quantity : (
                       <span className="text-amber-600 dark:text-amber-400">Stok Yok</span>
                     )}
                   </td>
@@ -188,15 +206,27 @@ export const InventoryGrid: React.FC = () => {
                     </span>
                   </td>
                   <td className="p-3 text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      <button 
+                        onClick={() => {
+                          setAdjustingProduct(product);
+                          setIsAdjustmentModalOpen(true);
+                        }}
+                        title="Adjust Stock"
+                        className="p-2 text-gray-400 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+                      >
+                        <PackageMinus size={16} />
+                      </button>
                       <button 
                         onClick={() => handleEdit(product)}
+                        title="Edit Product"
                         className="p-2 text-gray-400 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       >
                         <Edit2 size={16} />
                       </button>
                       <button 
                         onClick={() => handleDelete(product.id)}
+                        title="Delete Product"
                         className="p-2 text-gray-400 dark:text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                       >
                         <Trash2 size={16} />
@@ -222,6 +252,16 @@ export const InventoryGrid: React.FC = () => {
         onClose={() => setIsModalOpen(false)}
         product={editingProduct}
         onSave={handleSave}
+      />
+
+      <StockAdjustmentModal
+        isOpen={isAdjustmentModalOpen}
+        onClose={() => {
+          setIsAdjustmentModalOpen(false);
+          setAdjustingProduct(undefined);
+        }}
+        product={adjustingProduct}
+        onAdjustmentComplete={loadProducts}
       />
     </div>
   );

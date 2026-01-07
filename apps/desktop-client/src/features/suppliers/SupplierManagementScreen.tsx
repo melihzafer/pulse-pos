@@ -4,8 +4,7 @@ import { SupplierService } from '@pulse/core-logic';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import type { LocalSupplier } from '@pulse/core-logic';
-
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000'; // TODO: Get from settings
+import { useSettingsStore } from '../settings/store';
 
 interface SupplierStats {
   totalProducts: number;
@@ -15,6 +14,7 @@ interface SupplierStats {
 
 export function SupplierManagementScreen() {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore(); // Get from store
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
   const [supplierStats, setSupplierStats] = useState<Record<string, SupplierStats>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,12 +24,12 @@ export function SupplierManagementScreen() {
 
   useEffect(() => {
     loadSuppliers();
-  }, []);
+  }, [workspaceId]); // Reload when workspaceId changes
 
   const loadSuppliers = async () => {
     try {
       setLoading(true);
-      const data = await SupplierService.getSuppliers(WORKSPACE_ID, { activeOnly: false });
+      const data = await SupplierService.getSuppliers(workspaceId, { activeOnly: false });
       setSuppliers(data);
 
       // Load stats for each supplier
@@ -306,6 +306,7 @@ interface SupplierModalProps {
 }
 
 function SupplierModal({ supplier, onClose, onSave }: SupplierModalProps) {
+  const { workspaceId } = useSettingsStore();
   const [formData, setFormData] = useState({
     name: supplier?.name || '',
     contact_person: supplier?.contact_person || '',
@@ -341,7 +342,7 @@ function SupplierModal({ supplier, onClose, onSave }: SupplierModalProps) {
         if (formData.lead_time_days) {
           dataToCreate.lead_time_days = parseInt(formData.lead_time_days);
         }
-        await SupplierService.createSupplier(WORKSPACE_ID, dataToCreate);
+        await SupplierService.createSupplier(workspaceId, dataToCreate);
         toast.success('Supplier created successfully');
       }
       onSave();
@@ -355,7 +356,7 @@ function SupplierModal({ supplier, onClose, onSave }: SupplierModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">

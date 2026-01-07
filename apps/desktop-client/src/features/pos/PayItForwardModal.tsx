@@ -114,7 +114,7 @@ export const PayItForwardModal: React.FC<PayItForwardModalProps> = ({ isOpen, on
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto scrollbar-thin p-4">
           {mode === 'donate' ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {filteredProducts.map(product => (

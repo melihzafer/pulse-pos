@@ -8,9 +8,10 @@ import { ViewLayawayModal } from './ViewLayawayModal';
 import { RecordPaymentModal } from './RecordPaymentModal';
 import clsx from 'clsx';
 
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+import { useSettingsStore } from '../settings/store';
 
 export const LayawayScreen: React.FC = () => {
+  const { workspaceId } = useSettingsStore();
   const [layawayOrders, setLayawayOrders] = useState<LayawayOrder[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<LayawayOrder[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
@@ -30,7 +31,7 @@ export const LayawayScreen: React.FC = () => {
   useEffect(() => {
     loadLayawayOrders();
     loadStats();
-  }, []);
+  }, [workspaceId]);
 
   const filterOrders = useCallback(() => {
     let filtered = layawayOrders;
@@ -59,7 +60,7 @@ export const LayawayScreen: React.FC = () => {
 
   const loadLayawayOrders = async () => {
     try {
-      const orders = await LayawayService.getLayawayOrders(WORKSPACE_ID);
+      const orders = await LayawayService.getLayawayOrders(workspaceId);
       setLayawayOrders(orders);
     } catch (error) {
       console.error('Failed to load layaway orders:', error);
@@ -69,7 +70,7 @@ export const LayawayScreen: React.FC = () => {
 
   const loadStats = async () => {
     try {
-      const stats = await LayawayService.getLayawayStats(WORKSPACE_ID);
+      const stats = await LayawayService.getLayawayStats(workspaceId);
       setStats(stats);
     } catch (error) {
       console.error('Failed to load stats:', error);

@@ -62,6 +62,7 @@ class SyncService {
 
     this.isSyncing = true;
     console.log('Starting sync...');
+    window.dispatchEvent(new CustomEvent('sync-start'));
 
     try {
       // 1. Pull updates from Supabase (delta sync)
@@ -77,6 +78,7 @@ class SyncService {
       window.dispatchEvent(new CustomEvent('sync-error', { detail: error }));
     } finally {
       this.isSyncing = false;
+      window.dispatchEvent(new CustomEvent('sync-end'));
     }
   }
 

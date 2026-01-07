@@ -18,11 +18,11 @@ export const LowStockAlerts: React.FC = () => {
       const allProducts = await db.products.toArray();
       const lowStock = allProducts
         .filter((p) => {
-          const stockQty = p.quantity_on_hand ?? 0;
+          const stockQty = p.stock_quantity ?? 0;
           const minLevel = p.min_stock_level ?? 0;
           return stockQty <= minLevel;
         })
-        .sort((a, b) => (a.quantity_on_hand ?? 0) - (b.quantity_on_hand ?? 0));
+        .sort((a, b) => (a.stock_quantity ?? 0) - (b.stock_quantity ?? 0));
 
       setProducts(lowStock);
     } catch (error) {
@@ -33,7 +33,7 @@ export const LowStockAlerts: React.FC = () => {
   };
 
   const getStockStatus = (product: Product): 'critical' | 'warning' | 'ok' => {
-    const stockQty = product.quantity_on_hand ?? 0;
+    const stockQty = product.stock_quantity ?? 0;
     const minLevel = product.min_stock_level ?? 0;
     if (stockQty === 0) return 'critical';
     if (stockQty <= minLevel * 0.5) return 'warning';
@@ -141,7 +141,7 @@ export const LowStockAlerts: React.FC = () => {
                   </div>
                   <div className="text-right ml-3">
                     <p className="text-xl font-bold text-gray-900 dark:text-white">
-                      {typeof product.quantity_on_hand === 'number' ? product.quantity_on_hand : (
+                      {typeof product.stock_quantity === 'number' ? product.stock_quantity : (
                         <span className="text-red-600 dark:text-red-400 text-base">Stok Yok</span>
                       )}
                     </p>

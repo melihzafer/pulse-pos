@@ -3,6 +3,7 @@ import { X, Search, UserPlus, User, Eye } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, Customer, useCartStore } from '@pulse/core-logic';
 import { toast } from 'sonner';
+import { useSettingsStore } from '../settings/store';
 
 interface CustomerModalProps {
   isOpen: boolean;
@@ -12,6 +13,7 @@ interface CustomerModalProps {
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, onViewProfile }) => {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
   const { setCustomer } = useCartStore();
   const [searchQuery, setSearchQuery] = useState('');
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -36,7 +38,9 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, o
       }
 
       const results = await db.customers
-        .filter(c => 
+        .where('workspace_id')
+        .equals(workspaceId)
+        .filter(c =>  
           c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
           (c.phone?.includes(searchQuery) ?? false) ||
           (c.email?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false)
@@ -50,7 +54,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, o
   }, [searchQuery]);
 
   const loadCustomers = async () => {
-    const all = await db.customers.toArray();
+    const all = await db.customers
+      .where('workspace_id')
+      .equals(workspaceId)
+      .toArray();
     setCustomers(all);
   };
 
@@ -63,7 +70,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, o
     try {
       const customer: Customer = {
         id: crypto.randomUUID(),
-        workspace_id: '00000000-0000-0000-0000-000000000000', // TODO: Get from settings
+        workspace_id: workspaceId,
         name: newCustomer.name,
         phone: newCustomer.phone || undefined,
         email: newCustomer.email || undefined,
@@ -124,7 +131,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({ isOpen, onClose, o
                 />
               </div>
 
-              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              <div className="space-y-2 max-h-[400px] overflow-y-auto scrollbar-thin">
                 <button
                   onClick={() => setIsCreating(true)}
                   className="w-full p-3 flex items-center gap-3 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-colors border border-dashed border-blue-200 dark:border-blue-800"

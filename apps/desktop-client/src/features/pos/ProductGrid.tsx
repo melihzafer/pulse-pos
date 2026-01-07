@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Star, LayoutGrid, Tag } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { Product, MarketService, Promotion, db } from '@pulse/core-logic';
+import { Product, MarketService, Promotion } from '@pulse/core-logic';
+import { useRxCollection } from 'rxdb-hooks';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
@@ -19,17 +20,23 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProducts, setFilteredProducts] = useState<Product[]>(products);
   const [showSearch, setShowSearch] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'favorites'>('all');
+  const activeTab = 'all'; // Simplified for now
   const [activePromotions, setActivePromotions] = useState<Promotion[]>([]);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const collection = useRxCollection<Product>('products');
 
   const toggleFavorite = async (e: React.MouseEvent, product: Product) => {
     e.stopPropagation(); // Prevent triggering product click
     
+    if (!collection) return;
+
     try {
-      await db.products.update(product.id, {
-        is_quick_key: !product.is_quick_key,
-      });
+      const doc = await collection.findOne(product.id).exec();
+        if (doc) {
+            await doc.patch({
+                is_quick_key: !product.is_quick_key,
+            });
+        }
       
       if (!product.is_quick_key) {
         toast.success(t('pos.addedToFavorites', { name: product.name }));
@@ -266,9 +273,9 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
       )}
 
       {/* Product Grid */}
-      <div className="flex-1 overflow-y-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pb-4">
         {filteredProducts.map((product) => {
-          const stockQty = product.quantity_on_hand ?? 0;
+          const stockQty = product.stock_quantity ?? 0;
           return (
           <button
             key={product.id}
@@ -319,7 +326,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
             <div className="flex items-center justify-between text-sm relative z-10">
               <span className="text-gray-500 dark:text-slate-400">{t('pos.stock')}:</span>
               <span className={clsx("font-semibold", getStockColor(stockQty, product.min_stock_level))}>
-                {typeof product.quantity_on_hand === 'number' ? product.quantity_on_hand : (
+                {typeof product.stock_quantity === 'number' ? product.stock_quantity : (
                   <span className="text-amber-600 dark:text-amber-400">No Stock</span>
                 )}
               </span>

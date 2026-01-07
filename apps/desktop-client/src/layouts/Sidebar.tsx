@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, Sun, Moon, Tag, BarChart3, Truck, FileText, Clock, MapPin, ArrowLeftRight, Building2, TrendingUp, Menu, ChevronLeft, Users, Shield, Timer, History } from 'lucide-react';
+import { LayoutDashboard, ShoppingCart, Package, Settings, LogOut, Sun, Moon, Tag, BarChart3, Truck, FileText, Clock, MapPin, ArrowLeftRight, Building2, TrendingUp, Menu, ChevronLeft, Users, Shield, Timer, History, Receipt, ClipboardList, Tags } from 'lucide-react';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '@pulse/core-logic';
@@ -23,6 +23,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, theme,
   const canAccessReports = isAuthenticated && hasPermission('reports.view');
 
   const navItems = [
+    { id: 'home', icon: LayoutDashboard, label: t('sidebar.home', 'Home') },
     { id: 'pos', icon: ShoppingCart, label: t('sidebar.pos') },
     { id: 'inventory', icon: Package, label: t('sidebar.inventory') },
     { id: 'suppliers', icon: Truck, label: t('sidebar.suppliers', 'Suppliers') },
@@ -34,12 +35,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange, theme,
     { id: 'transfers', icon: ArrowLeftRight, label: t('sidebar.transfers', 'Transfers') },
     { id: 'multi-location-dashboard', icon: Building2, label: t('sidebar.multiLocationDashboard', 'Multi-Location') },
     { id: 'location-pl', icon: TrendingUp, label: t('sidebar.locationPL', 'P&L Report') },
+    // Receipt & Documents section
+    { id: 'receipt-designer', icon: Receipt, label: t('sidebar.receiptDesigner', 'Receipt Designer') },
+    { id: 'z-report', icon: ClipboardList, label: t('sidebar.zReport', 'Z-Report') },
+    { id: 'label-printing', icon: Tags, label: t('sidebar.labelPrinting', 'Label Printing') },
     // Employee Management section
     { id: 'time-clock', icon: Timer, label: t('sidebar.timeClock', 'Time Clock') },
     ...(canAccessAdmin ? [{ id: 'users', icon: Users, label: t('sidebar.users', 'Users') }] : []),
     ...(canAccessRoles ? [{ id: 'roles', icon: Shield, label: t('sidebar.roles', 'Roles') }] : []),
     ...((canAccessAdmin || canAccessReports) ? [{ id: 'activity-log', icon: History, label: t('sidebar.activityLog', 'Activity Log') }] : []),
-    { id: 'dashboard', icon: LayoutDashboard, label: t('sidebar.dashboard') },
     { id: 'settings', icon: Settings, label: t('sidebar.settings') },
   ];
 

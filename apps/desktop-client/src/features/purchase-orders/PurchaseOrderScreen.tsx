@@ -8,10 +8,11 @@ import type { LocalPurchaseOrder, LocalSupplier, LocalPurchaseOrderItem } from '
 import { CreatePurchaseOrderModal } from './CreatePurchaseOrderModal';
 import { ReceivePurchaseOrderModal } from './ReceivePurchaseOrderModal';
 
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000'; // TODO: Get from settings
+import { useSettingsStore } from '../settings/store';
 
 export function PurchaseOrderScreen() {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
   const [purchaseOrders, setPurchaseOrders] = useState<LocalPurchaseOrder[]>([]);
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -23,14 +24,14 @@ export function PurchaseOrderScreen() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [workspaceId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [pos, suppliersData] = await Promise.all([
-        PurchaseOrderService.getPurchaseOrders(WORKSPACE_ID),
-        SupplierService.getSuppliers(WORKSPACE_ID, { activeOnly: true }),
+        PurchaseOrderService.getPurchaseOrders(workspaceId),
+        SupplierService.getSuppliers(workspaceId, { activeOnly: true }),
       ]);
       setPurchaseOrders(pos);
       setSuppliers(suppliersData);
@@ -329,7 +330,7 @@ function ViewPurchaseOrderModal({ purchaseOrder, supplierName, onClose }: ViewPu
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
           <div className="flex items-center justify-between">

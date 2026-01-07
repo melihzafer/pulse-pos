@@ -6,8 +6,11 @@ import { generateId } from '@pulse/core-logic/src/utils';
 import { useTranslation } from 'react-i18next';
 import { Alert } from '../../components/Alert';
 
+import { useSettingsStore } from '../settings/store';
+
 export const PromotionsScreen: React.FC = () => {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [isCreating, setIsCreating] = useState(false);
@@ -40,11 +43,11 @@ export const PromotionsScreen: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [workspaceId]);
 
   const loadData = async () => {
-    const promos = await db.promotions.toArray();
-    const prods = await db.products.toArray();
+    const promos = await db.promotions.where('workspace_id').equals(workspaceId).toArray();
+    const prods = await db.products.where('workspace_id').equals(workspaceId).toArray();
     setPromotions(promos);
     setProducts(prods);
   };
@@ -106,7 +109,7 @@ export const PromotionsScreen: React.FC = () => {
 
     const promoData: Promotion = {
       id: editingPromo ? editingPromo.id : generateId(),
-      workspace_id: 'default',
+      workspace_id: workspaceId,
       name,
       description,
       type: promoType,

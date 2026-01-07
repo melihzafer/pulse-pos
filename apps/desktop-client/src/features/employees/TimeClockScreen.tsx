@@ -15,6 +15,7 @@ import {
   User,
 } from 'lucide-react';
 import { TimeClockService, useAuthStore } from '@pulse/core-logic';
+import { useSettingsStore } from '../settings/store';
 
 interface TimeClockEntry {
   id: string;
@@ -34,6 +35,7 @@ interface ClockStatus {
 }
 
 export const TimeClockScreen: React.FC = () => {
+  const { workspaceId } = useSettingsStore();
   const { currentUser, currentCashier } = useAuthStore();
   const userId = currentUser?.id || currentCashier?.id;
   const userName = currentUser?.full_name || currentCashier?.id || 'Unknown';
@@ -119,7 +121,7 @@ export const TimeClockScreen: React.FC = () => {
     if (!userId) return;
     setActionLoading(true);
     try {
-      await TimeClockService.clockIn(userId, 'default');
+      await TimeClockService.clockIn(userId, workspaceId);
       await loadData();
       showNotification('success', 'Clocked in successfully!');
     } catch (error) {
@@ -206,7 +208,7 @@ export const TimeClockScreen: React.FC = () => {
       )}
 
       {/* Content */}
-      <div className="flex-1 overflow-auto p-6">
+      <div className="flex-1 overflow-auto scrollbar-thin p-6">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
@@ -230,17 +232,11 @@ export const TimeClockScreen: React.FC = () => {
               <div className="flex items-center justify-center gap-2 mb-6">
                 <div className={`w-3 h-3 rounded-full ${
                   status.isClockedIn 
-                    ? status.isOnBreak 
-                      ? 'bg-amber-500 animate-pulse' 
-                      : 'bg-green-500 animate-pulse'
+                    ? 'bg-green-500 animate-pulse'
                     : 'bg-gray-400'
                 }`} />
                 <span className="text-lg font-medium text-gray-900 dark:text-white">
-                  {status.isClockedIn 
-                    ? status.isOnBreak 
-                      ? 'On Break' 
-                      : 'Working'
-                    : 'Clocked Out'}
+                  {status.isClockedIn ? 'Working' : 'Clocked Out'}
                 </span>
               </div>
 
@@ -281,55 +277,20 @@ export const TimeClockScreen: React.FC = () => {
                     )}
                   </button>
                 ) : (
-                  <>
-                    {!status.isOnBreak ? (
-                      <>
-                        <button
-                          onClick={handleStartBreak}
-                          disabled={actionLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/25 disabled:opacity-50 font-medium"
-                        >
-                          {actionLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <>
-                              <Coffee className="w-5 h-5" />
-                              <span>Start Break</span>
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={handleClockOut}
-                          disabled={actionLoading}
-                          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 transition-all shadow-lg shadow-red-500/25 disabled:opacity-50 font-medium"
-                        >
-                          {actionLoading ? (
-                            <Loader2 className="w-5 h-5 animate-spin" />
-                          ) : (
-                            <>
-                              <Square className="w-5 h-5" />
-                              <span>Clock Out</span>
-                            </>
-                          )}
-                        </button>
-                      </>
+                  <button
+                    onClick={handleClockOut}
+                    disabled={actionLoading}
+                    className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl hover:from-red-600 hover:to-rose-600 transition-all shadow-lg shadow-red-500/25 disabled:opacity-50 font-medium text-lg"
+                  >
+                    {actionLoading ? (
+                      <Loader2 className="w-6 h-6 animate-spin" />
                     ) : (
-                      <button
-                        onClick={handleEndBreak}
-                        disabled={actionLoading}
-                        className="flex-1 flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 transition-all shadow-lg shadow-blue-500/25 disabled:opacity-50 font-medium text-lg"
-                      >
-                        {actionLoading ? (
-                          <Loader2 className="w-6 h-6 animate-spin" />
-                        ) : (
-                          <>
-                            <Play className="w-6 h-6" />
-                            <span>End Break</span>
-                          </>
-                        )}
-                      </button>
+                      <>
+                        <Square className="w-6 h-6" />
+                        <span>Clock Out</span>
+                      </>
                     )}
-                  </>
+                  </button>
                 )}
               </div>
             </div>

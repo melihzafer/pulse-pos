@@ -2,34 +2,47 @@ import React, { useEffect, useState } from 'react';
 import { DollarSign, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { db, formatCurrency, Sale } from '@pulse/core-logic';
+import { SalesChart } from './components/SalesChart';
+import { useSettingsStore } from '../settings/store';
 
 export const DashboardScreen: React.FC = () => {
   const { t } = useTranslation();
+  const { workspaceId } = useSettingsStore();
+
   const [stats, setStats] = useState({
     totalSales: 0,
     revenue: 0,
     lowStockCount: 0,
   });
   const [recentSales, setRecentSales] = useState<Sale[]>([]);
+  const [allSalesData, setAllSalesData] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     loadStats();
-  }, []);
+  }, [workspaceId]);
 
   const loadStats = async () => {
     try {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // Get all sales
-      const allSales = await db.sales.toArray();
+      // Get all sales for current workspace
+      const allSales = await db.sales
+        .where('workspace_id')
+        .equals(workspaceId)
+        .toArray();
+      setAllSalesData(allSales); // Store for chart
+
       const todaySales = allSales.filter(s => new Date(s.created_at || '') >= today);
 
-      // Get products for low stock (use quantity_on_hand with fallback to 0)
-      const products = await db.products.toArray();
+      // Get products for low stock in current workspace
+      const products = await db.products
+        .where('workspace_id')
+        .equals(workspaceId)
+        .toArray();
       const lowStock = products.filter(p => {
-        const stockQty = p.quantity_on_hand ?? 0;
+        const stockQty = p.stock_quantity ?? 0;
         return stockQty <= (p.min_stock_level ?? 0);
       });
 
@@ -87,6 +100,12 @@ export const DashboardScreen: React.FC = () => {
             <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.lowStockCount}</p>
           </div>
         </div>
+      </div>
+
+      {/* Sales Chart */}
+      <div className="glass-panel p-6 rounded-2xl">
+        <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">{t('dashboard.salesTrend', 'Sales Trend (Last 7 Days)')}</h3>
+        <SalesChart sales={allSalesData} />
       </div>
 
       {/* Recent Sales */}

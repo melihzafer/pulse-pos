@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, UserPlus, Shield, User as UserIcon } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { Edit2, Trash2, UserPlus, Shield, User as UserIcon, X } from 'lucide-react';
 import { db, Cashier } from '@pulse/core-logic';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { useSettingsStore } from './store';
 
 export const CashierManagement: React.FC = () => {
+  const { workspaceId } = useSettingsStore();
   const { t } = useTranslation();
   const [cashiers, setCashiers] = useState<Cashier[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -133,12 +136,9 @@ export const CashierManagement: React.FC = () => {
         }
 
         // Create new cashier
-        const workspaces = await db.workspaces.toArray();
-        const workspaceId = workspaces[0]?.id || 'default';
-
         const newCashier: Cashier = {
           id: crypto.randomUUID(),
-          workspace_id: workspaceId,
+          workspace_id: workspaceId || 'default',
           username: formData.username.trim(),
           pin_code: formData.pin_code,
           full_name: formData.full_name.trim(),
@@ -276,7 +276,7 @@ export const CashierManagement: React.FC = () => {
               <div className="flex items-center gap-2">
                 <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getRoleBadgeColor(cashier.role)}`}>
                   {getRoleIcon(cashier.role)}
-                  {t(`cashiers.role.${cashier.role}`, cashier.role)}
+                  {t(`cashiers.roles.${cashier.role}`, cashier.role)}
                 </span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   cashier.is_active
@@ -291,119 +291,165 @@ export const CashierManagement: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="glass-panel max-w-md w-full p-6 rounded-2xl shadow-2xl">
-            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-              {editingCashier
-                ? t('cashiers.editCashier', 'Edit Cashier')
-                : t('cashiers.addNewCashier', 'Add New Cashier')}
-            </h3>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Username */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t('cashiers.username', 'Username')} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.username}
-                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-                  placeholder={t('cashiers.usernamePlaceholder', 'Enter username')}
-                  autoFocus
-                />
-              </div>
-
-              {/* PIN Code */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t('cashiers.pinCode', 'PIN Code')} {!editingCashier && '*'}
-                </label>
-                <input
-                  type="password"
-                  value={formData.pin_code}
-                  onChange={(e) => {
-                    const value = e.target.value.replace(/\D/g, '');
-                    if (value.length <= 6) {
-                      setFormData({ ...formData, pin_code: value });
-                    }
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-                  placeholder={editingCashier ? t('cashiers.leaveEmptyToKeep', 'Leave empty to keep current') : '••••••'}
-                  maxLength={6}
-                  inputMode="numeric"
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-slate-400">
-                  {t('cashiers.pinHelp', '4-6 digit PIN code')}
-                </p>
-              </div>
-
-              {/* Full Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t('cashiers.fullName', 'Full Name')} *
-                </label>
-                <input
-                  type="text"
-                  value={formData.full_name}
-                  onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-                  placeholder={t('cashiers.fullNamePlaceholder', 'Enter full name')}
-                />
-              </div>
-
-              {/* Role */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-                  {t('cashiers.role', 'Role')} *
-                </label>
-                <select
-                  value={formData.role}
-                  onChange={(e) => setFormData({ ...formData, role: e.target.value as 'admin' | 'manager' | 'cashier' })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-800 text-gray-900 dark:text-white"
-                >
-                  <option value="cashier">{t('cashiers.role.cashier', 'Cashier')}</option>
-                  <option value="manager">{t('cashiers.role.manager', 'Manager')}</option>
-                  <option value="admin">{t('cashiers.role.admin', 'Admin')}</option>
-                </select>
-              </div>
-
-              {/* Active Status */}
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="is_active"
-                  checked={formData.is_active}
-                  onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
-                  className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                />
-                <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-slate-300">
-                  {t('cashiers.activeStatus', 'Active (can log in)')}
-                </label>
-              </div>
-
-              {/* Buttons */}
-              <div className="flex gap-3 pt-4">
+      {/* Modal - rendered via Portal to escape parent overflow */}
+      {isModalOpen && createPortal(
+        <div className="fixed inset-0 z-[9999] overflow-y-auto">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm transition-opacity"
+            onClick={handleCloseModal}
+          />
+          
+          {/* Modal Content */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative w-full max-w-md transform overflow-hidden rounded-2xl bg-white dark:bg-slate-800 shadow-2xl transition-all">
+              {/* Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-slate-700">
+                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+                  {editingCashier
+                    ? t('cashiers.editCashier', 'Edit Cashier')
+                    : t('cashiers.addNewCashier', 'Add New Cashier')}
+                </h3>
                 <button
-                  type="button"
                   onClick={handleCloseModal}
-                  className="flex-1 px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+                  className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
                 >
-                  {t('common.cancel', 'Cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg"
-                >
-                  {editingCashier ? t('common.save', 'Save') : t('cashiers.create', 'Create')}
+                  <X size={20} />
                 </button>
               </div>
-            </form>
+
+              {/* Form */}
+              <form onSubmit={handleSubmit} className="p-6 space-y-5">
+                {/* Username */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    {t('cashiers.username', 'Username')} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.username}
+                    onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
+                    placeholder={t('cashiers.usernamePlaceholder', 'Enter username')}
+                    autoFocus
+                  />
+                </div>
+
+                {/* PIN Code */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    {t('cashiers.pinCode', 'PIN Code')} {!editingCashier && <span className="text-red-500">*</span>}
+                  </label>
+                  <input
+                    type="password"
+                    value={formData.pin_code}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 6) {
+                        setFormData({ ...formData, pin_code: value });
+                      }
+                    }}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
+                    placeholder={editingCashier ? t('cashiers.leaveEmptyToKeep', 'Leave empty to keep current') : '••••••'}
+                    maxLength={6}
+                    inputMode="numeric"
+                  />
+                  <p className="mt-1.5 text-xs text-gray-500 dark:text-slate-400">
+                    {t('cashiers.pinHelp', '4-6 digit PIN code')}
+                  </p>
+                </div>
+
+                {/* Full Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    {t('cashiers.fullName', 'Full Name')} <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.full_name}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white dark:bg-slate-900 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 transition-all"
+                    placeholder={t('cashiers.fullNamePlaceholder', 'Enter full name')}
+                  />
+                </div>
+
+                {/* Role */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
+                    {t('cashiers.roleLabel', 'Role')} <span className="text-red-500">*</span>
+                  </label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(['cashier', 'manager', 'admin'] as const).map((role) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, role })}
+                        className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 transition-all ${
+                          formData.role === role
+                            ? role === 'admin'
+                              ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                              : role === 'manager'
+                              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                              : 'border-gray-500 bg-gray-50 dark:bg-slate-700'
+                            : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500'
+                        }`}
+                      >
+                        {role === 'admin' ? (
+                          <Shield className={`w-5 h-5 ${formData.role === role ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400'}`} />
+                        ) : (
+                          <UserIcon className={`w-5 h-5 ${formData.role === role ? (role === 'manager' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-600 dark:text-slate-300') : 'text-gray-400'}`} />
+                        )}
+                        <span className={`text-xs font-medium ${
+                          formData.role === role
+                            ? role === 'admin'
+                              ? 'text-purple-700 dark:text-purple-300'
+                              : role === 'manager'
+                              ? 'text-blue-700 dark:text-blue-300'
+                              : 'text-gray-700 dark:text-slate-200'
+                            : 'text-gray-500 dark:text-slate-400'
+                        }`}>
+                          {t(`cashiers.roles.${role}`, role.charAt(0).toUpperCase() + role.slice(1))}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Active Status */}
+                <div className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-slate-900 rounded-xl">
+                  <input
+                    type="checkbox"
+                    id="is_active"
+                    checked={formData.is_active}
+                    onChange={(e) => setFormData({ ...formData, is_active: e.target.checked })}
+                    className="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="is_active" className="text-sm text-gray-700 dark:text-slate-300 cursor-pointer select-none">
+                    {t('cashiers.activeStatus', 'Active (can log in)')}
+                  </label>
+                </div>
+
+                {/* Buttons */}
+                <div className="flex gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCloseModal}
+                    className="flex-1 px-4 py-2.5 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-300 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors font-medium"
+                  >
+                    {t('common.cancel', 'Cancel')}
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 px-4 py-2.5 bg-gradient-to-r from-blue-600 to-cyan-600 text-white rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all shadow-lg font-medium"
+                  >
+                    {editingCashier ? t('common.save', 'Save') : t('cashiers.create', 'Create')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

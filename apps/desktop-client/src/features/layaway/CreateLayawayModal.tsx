@@ -6,7 +6,7 @@ import type { Product, Customer } from '@pulse/core-logic';
 import { toast } from 'sonner';
 import clsx from 'clsx';
 
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000';
+import { useSettingsStore } from '../settings/store';
 
 interface LayawayItem {
   product: Product;
@@ -26,6 +26,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
   onClose,
   onSuccess,
 }) => {
+  const { workspaceId } = useSettingsStore();
   const [step, setStep] = useState<'customer' | 'products' | 'payment'>('customer');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -45,7 +46,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
       loadCustomers();
       loadProducts();
     }
-  }, [isOpen]);
+  }, [isOpen, workspaceId]);
 
   useEffect(() => {
     const subtotal = layawayItems.reduce((sum, item) => sum + item.subtotal, 0);
@@ -57,7 +58,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
 
   const loadCustomers = async () => {
     try {
-      const allCustomers = await db.customers.where('workspace_id').equals(WORKSPACE_ID).toArray();
+      const allCustomers = await db.customers.where('workspace_id').equals(workspaceId).toArray();
       setCustomers(allCustomers.filter((c) => !c._deleted));
     } catch (error) {
       console.error('Failed to load customers:', error);
@@ -67,8 +68,8 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
 
   const loadProducts = async () => {
     try {
-      const allProducts = await db.products.where('workspace_id').equals(WORKSPACE_ID).toArray();
-      const activeProducts = allProducts.filter((p) => !p._deleted && p.is_active && (p.quantity_on_hand || 0) > 0);
+      const allProducts = await db.products.where('workspace_id').equals(workspaceId).toArray();
+      const activeProducts = allProducts.filter((p) => !p._deleted && p.is_active && (p.stock_quantity || 0) > 0);
       console.log('📦 Loaded products for layaway:', activeProducts.length);
       setProducts(activeProducts);
     } catch (error) {
@@ -127,8 +128,8 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
     }
 
     const product = products.find((p) => p.id === productId);
-    if (product && newQuantity > (product.quantity_on_hand || 0)) {
-      toast.error(`Only ${product.quantity_on_hand} units available`);
+    if (product && newQuantity > (product.stock_quantity || 0)) {
+      toast.error(`Only ${product.stock_quantity} units available`);
       return;
     }
 
@@ -163,7 +164,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
 
     setIsSubmitting(true);
     try {
-      await LayawayService.createLayawayOrder(WORKSPACE_ID, {
+      await LayawayService.createLayawayOrder(workspaceId, {
         customerId: selectedCustomer.id,
         userId: '00000000-0000-0000-0000-000000000000', // TODO: Get from auth
         items: layawayItems.map((item) => ({
@@ -324,7 +325,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
                         <div className="flex-1">
                           <div className="font-medium text-gray-900 dark:text-white">{product.name}</div>
                           <div className="text-sm text-gray-600 dark:text-slate-400 mt-1">
-                            Stock: {product.quantity_on_hand || 0} • {product.sale_price.toFixed(2)} BGN
+                            Stock: {product.stock_quantity || 0} • {product.sale_price.toFixed(2)} BGN
                           </div>
                         </div>
                         <Plus size={18} className="text-blue-600" />
@@ -386,7 +387,7 @@ export const CreateLayawayModal: React.FC<CreateLayawayModalProps> = ({
                             }
                             className="w-16 px-2 py-1 text-center border border-gray-300 dark:border-slate-600 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white"
                             min="1"
-                            max={item.product.quantity_on_hand || 0}
+                            max={item.product.stock_quantity || 0}
                           />
                           <button
                             onClick={() => handleUpdateQuantity(item.product.id, item.quantity + 1)}

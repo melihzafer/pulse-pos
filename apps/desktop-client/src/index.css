@@ -2,6 +2,138 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Custom Scrollbar Design - Sleek & Modern
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* Webkit browsers (Chrome, Safari, Edge, Opera) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c4c9d4 0%, #a8aebb 100%);
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+  transition: all 0.3s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #9ca3af 0%, #6b7280 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Dark mode scrollbars */
+.dark ::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #475569 0%, #334155 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #64748b 0%, #475569 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Thin scrollbar variant for sidebars and smaller containers */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  border: 1px solid transparent;
+}
+
+/* Hidden scrollbar that still allows scrolling */
+.scrollbar-hidden::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Gutter scrollbar - appears only on hover */
+.scrollbar-gutter {
+  scrollbar-gutter: stable;
+}
+
+.scrollbar-gutter::-webkit-scrollbar-thumb {
+  background: transparent;
+  transition: background 0.3s ease;
+}
+
+.scrollbar-gutter:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #c4c9d4 0%, #a8aebb 100%);
+}
+
+.dark .scrollbar-gutter:hover::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #475569 0%, #334155 100%);
+}
+
+/* Colored scrollbar variants */
+.scrollbar-primary::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #818cf8 0%, #6366f1 100%);
+}
+
+.scrollbar-primary::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #a5b4fc 0%, #818cf8 100%);
+}
+
+.scrollbar-success::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #34d399 0%, #10b981 100%);
+}
+
+.scrollbar-success::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6ee7b7 0%, #34d399 100%);
+}
+
+/* Firefox scrollbar styling */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #a8aebb transparent;
+}
+
+.dark * {
+  scrollbar-color: #475569 transparent;
+}
+
+/* Smooth scroll behavior */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════ */
+
 /* Enhanced Light Theme Panel Style */
 .glass-panel {
   @apply bg-white/90 backdrop-blur-sm border border-gray-200/80 shadow-lg;

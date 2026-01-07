@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Check, Printer, Mail, QrCode, ArrowRight, FileText, Download } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { formatCurrency, CartItem, db, PaymentMethod, Product } from '@pulse/core-logic';
+import { formatCurrency, CartItem, PaymentMethod, Product, Sale } from '@pulse/core-logic';
+import { useRxCollection } from 'rxdb-hooks';
 import clsx from 'clsx';
 import { toast } from 'sonner';
 import { downloadReceiptPDF } from '../../utils/pdfGenerator';
@@ -28,13 +29,15 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, cha
   const [isInstalling, setIsInstalling] = useState(false);
   const [fiscalReceiptNumber, setFiscalReceiptNumber] = useState<string | null>(null);
   const [dbItems, setDbItems] = useState<CartItem[]>([]);
+  const salesCollection = useRxCollection<Sale>('sales');
 
-  // Check if fiscal receipt already exists and load items from DB
+  // Check if fiscal receipt already exists and load items  // Check if fiscal receipt already exists and load items from DB
   React.useEffect(() => {
     const loadSaleData = async () => {
-      if (isOpen && saleId) {
+      if (isOpen && saleId && salesCollection) {
         try {
-          const sale = await db.sales.get(saleId);
+          const doc = await salesCollection.findOne(saleId).exec();
+          const sale = doc?.toJSON() as Sale | undefined;
           if (sale) {
             if (sale.fiscal_receipt_number) {
               setFiscalReceiptNumber(sale.fiscal_receipt_number);
@@ -58,7 +61,7 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, cha
                 } as Product,
                 quantity: dbItem.quantity,
                 subtotal: (dbItem.price_snapshot * dbItem.quantity) - (dbItem.discount || 0),
-                discount: dbItem.discount
+                discount: dbItem.discount || 0
               }));
               setDbItems(mappedItems);
             }
@@ -69,7 +72,8 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, cha
       }
     };
     loadSaleData();
-  }, [isOpen, saleId]);
+
+  }, [isOpen, saleId, salesCollection]);
 
   const handleInstallReceipt = async () => {
     if (onInstall) {
@@ -92,18 +96,20 @@ export const ReceiptModal: React.FC<ReceiptModalProps> = ({ isOpen, onClose, cha
       const taxAmount = total - subtotalAmount;
       
       // Save fiscal receipt information to database
-      const sale = await db.sales.get(saleId);
-      if (!sale) {
-        throw new Error('Sale not found');
-      }
+      if (salesCollection) {
+          const saleDoc = await salesCollection.findOne(saleId).exec();
+          if (!saleDoc) {
+            throw new Error('Sale not found');
+          }
 
-      // Update sale with fiscal receipt number
-      await db.sales.update(saleId, {
-        fiscal_receipt_number: invoiceNumber,
-        fiscal_receipt_generated_at: new Date().toISOString(),
-        tax_amount: parseFloat(taxAmount.toFixed(2)),
-        subtotal_before_tax: parseFloat(subtotalAmount.toFixed(2)),
-      });
+          // Update sale with fiscal receipt number
+          await saleDoc.patch({
+            fiscal_receipt_number: invoiceNumber,
+            fiscal_receipt_generated_at: new Date().toISOString(),
+            tax_amount: parseFloat(taxAmount.toFixed(2)),
+            subtotal_before_tax: parseFloat(subtotalAmount.toFixed(2)),
+          });
+      }
 
       setFiscalReceiptNumber(invoiceNumber);
       toast.success(t('receipt.fiscalGenerated', { number: invoiceNumber }));

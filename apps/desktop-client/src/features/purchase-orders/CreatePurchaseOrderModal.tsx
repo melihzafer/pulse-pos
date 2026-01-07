@@ -4,7 +4,7 @@ import { PurchaseOrderService, SupplierService, db } from '@pulse/core-logic';
 import { toast } from 'sonner';
 import type { LocalSupplier, LocalProduct } from '@pulse/core-logic';
 
-const WORKSPACE_ID = '00000000-0000-0000-0000-000000000000'; // TODO: Get from settings
+import { useSettingsStore } from '../settings/store';
 
 interface CreatePurchaseOrderModalProps {
   onClose: () => void;
@@ -19,9 +19,9 @@ interface POItem {
 }
 
 export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseOrderModalProps) {
+  const { workspaceId } = useSettingsStore();
   const [suppliers, setSuppliers] = useState<LocalSupplier[]>([]);
   const [products, setProducts] = useState<LocalProduct[]>([]);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [lowStockProducts, setLowStockProducts] = useState<Array<{
     product: LocalProduct;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -42,14 +42,14 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [workspaceId]);
 
   const loadData = async () => {
     try {
       const [suppliersData, productsData, lowStock] = await Promise.all([
-        SupplierService.getSuppliers(WORKSPACE_ID, { activeOnly: true }),
+        SupplierService.getSuppliers(workspaceId, { activeOnly: true }),
         db.products.toArray(),
-        PurchaseOrderService.getLowStockProducts(WORKSPACE_ID),
+        PurchaseOrderService.getLowStockProducts(workspaceId),
       ]);
       setSuppliers(suppliersData.filter((s) => s.is_active));
       setProducts(productsData);
@@ -106,7 +106,7 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
 
     try {
       setSaving(true);
-      await PurchaseOrderService.createPurchaseOrder(WORKSPACE_ID, {
+      await PurchaseOrderService.createPurchaseOrder(workspaceId, {
         supplierId: selectedSupplierId,
         expectedDeliveryDate: expectedDeliveryDate || undefined,
         notes: notes || undefined,
@@ -138,7 +138,7 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto scrollbar-thin">
         {/* Header */}
         <div className="sticky top-0 bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
@@ -239,7 +239,7 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
                     className="w-full pl-9 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-900 dark:text-white"
                   />
                 </div>
-                <div className="max-h-48 overflow-y-auto space-y-1">
+                <div className="max-h-48 overflow-y-auto scrollbar-thin space-y-1">
                   {filteredProducts.map((product) => (
                     <button
                       key={product.id}
@@ -287,7 +287,7 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
                           <input
                             type="number"
                             value={item.quantity}
-                            onChange={(e) =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               handleUpdateItem(
                                 item.productId,
                                 'quantity',
@@ -302,7 +302,7 @@ export function CreatePurchaseOrderModal({ onClose, onSuccess }: CreatePurchaseO
                           <input
                             type="number"
                             value={item.unitCost}
-                            onChange={(e) =>
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                               handleUpdateItem(
                                 item.productId,
                                 'unitCost',

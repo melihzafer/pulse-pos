@@ -20,6 +20,19 @@ export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfi
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showPifModal, setShowPifModal] = useState(false);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // F7 to open Held Sales
+      if (e.key === 'F7') {
+        e.preventDefault();
+        setShowParkedSales(true);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const total = getTotal();
   const itemCount = getItemCount();
 
@@ -90,7 +103,7 @@ export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfi
       </div>
 
       {/* Cart Items */}
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+      <div className="flex-1 overflow-y-auto scrollbar-thin space-y-3 mb-4">
         {items.length === 0 ? (
           <div className="flex items-center justify-center h-full">
             <p className="text-gray-400 dark:text-slate-500">{t('cart.empty')}</p>

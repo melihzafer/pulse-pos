@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Cashier, db, LocalUser, LocalRole } from '../database';
+import { Cashier, db } from '../database';
 import { AuthService } from '../services/AuthService';
 import type { User, Role } from '../types';
 

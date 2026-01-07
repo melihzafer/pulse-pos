@@ -57,7 +57,7 @@ export const StockTransferScreen: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col p-6 overflow-y-auto">
+    <div className="h-full flex flex-col p-6 overflow-y-auto scrollbar-thin">
       {/* Header */}
       <div className="flex justify-between items-center mb-8">
         <div>
