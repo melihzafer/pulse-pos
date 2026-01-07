@@ -498,15 +498,18 @@ Based on the roadmap priority recommendations:
 
 ## 🔧 Technical Debt & Known Issues
 
-### Pre-existing Issues (Not blocking):
-1. `PromotionsScreen.tsx` - Type mismatch with promotion types (bundle/tiered not in enum)
-2. `MarketService.ts` - Boolean comparison warnings (is_active === 1)
-3. **These do not affect Phase 1-2 functionality**
+### Resolved Issues (January 7, 2026):
+1. ✅ `PromotionsScreen.tsx` - Fixed type mismatch with promotion types (bundle/tiered now included)
+2. ✅ `MarketService.ts` - Added bundle and tiered promotion support with proper logic
+3. ✅ Translation keys - Added missing keys for bundle/tiered types (minItems, minAmount) in all 3 languages
 
-### Recommended Fixes:
-- Update PromotionTypeSchema to include all types
-- Fix boolean comparison in MarketService
-- Add missing translation keys for new features
+### Remaining Issues:
+1. Email/SMS receipts - Pending service integration (SendGrid/AWS SES)
+2. Sound effects - Audio files not yet added for notifications
+
+### Notes:
+- PromotionTypeSchema already included all 6 types (bogo, discount_percent, fixed_amount, bundle, tiered, happy_hour)
+- Boolean comparison in MarketService uses `=== true` which is valid TypeScript (no change needed)
 
 ---
 
@@ -531,5 +534,5 @@ Based on the roadmap priority recommendations:
 - 🚧 Blocked / Needs Decision
 - ❌ Cancelled / Deprioritized
 
-**Last Review Date:** January 14, 2025
-**Next Review:** After Phase 7 or 8 completion
+**Last Review Date:** January 7, 2026
+**Next Review:** After Phase 8 completion

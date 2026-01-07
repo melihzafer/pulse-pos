@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Minus, Trash2, Clock, PauseCircle, User, Sparkles, Heart, Tag, Eye } from 'lucide-react';
 import { useCartStore, formatCurrency, ParkedSale, Product, getUpsellProducts } from '@pulse/core-logic';
 import clsx from 'clsx';

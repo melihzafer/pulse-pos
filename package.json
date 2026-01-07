@@ -18,7 +18,11 @@
     "packages/*"
   ],
   "dependencies": {
+    "dexie": "4.0.10",
     "recharts": "^3.4.1",
     "sonner": "^2.0.7"
+  },
+  "overrides": {
+    "dexie": "4.0.10"
   }
 }

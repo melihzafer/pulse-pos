@@ -396,6 +396,68 @@ export class MarketService {
         }
         
         console.log('[MarketService] Happy hour applied to', matchedCount, 'items');
+      } else if (promo.type === 'bundle') {
+        // Bundle: Buy X or more items, get discount
+        const minItems = rules.min_items || 2;
+        const discountPercent = rules.discount_percent || 0;
+
+        // Filter matching items
+        const matchingItems = newCart.filter(item => {
+          if (item.appliedPromotionId === promo.id) return false;
+          if (promo.target_variants && promo.target_variants.length > 0) {
+            return promo.target_variants.includes(item.product.id);
+          }
+          return true; // Apply to all items if no target_variants
+        });
+
+        // Count total quantity of matching items
+        const totalQty = matchingItems.reduce((sum, item) => sum + item.quantity, 0);
+
+        console.log('[MarketService] Bundle check:', { minItems, totalQty, matchingItems: matchingItems.length });
+
+        if (totalQty >= minItems) {
+          for (const item of matchingItems) {
+            const unitPrice = item.priceOverride ?? item.product.sale_price;
+            const discountAmount = (unitPrice * item.quantity) * (discountPercent / 100);
+
+            item.discount = (item.discount || 0) + discountAmount;
+            item.subtotal = (item.quantity * unitPrice) - item.discount;
+            item.appliedPromotionId = promo.id;
+          }
+          console.log('[MarketService] Bundle discount applied to', matchingItems.length, 'items');
+        }
+      } else if (promo.type === 'tiered') {
+        // Tiered: Spend X or more, get discount
+        const minAmount = rules.min_amount || 0;
+        const discountPercent = rules.discount_percent || 0;
+
+        // Calculate cart total for matching items
+        const matchingItems = newCart.filter(item => {
+          if (item.appliedPromotionId === promo.id) return false;
+          if (promo.target_variants && promo.target_variants.length > 0) {
+            return promo.target_variants.includes(item.product.id);
+          }
+          return true;
+        });
+
+        const matchingTotal = matchingItems.reduce((sum, item) => {
+          const unitPrice = item.priceOverride ?? item.product.sale_price;
+          return sum + (unitPrice * item.quantity);
+        }, 0);
+
+        console.log('[MarketService] Tiered check:', { minAmount, matchingTotal });
+
+        if (matchingTotal >= minAmount) {
+          for (const item of matchingItems) {
+            const unitPrice = item.priceOverride ?? item.product.sale_price;
+            const discountAmount = (unitPrice * item.quantity) * (discountPercent / 100);
+
+            item.discount = (item.discount || 0) + discountAmount;
+            item.subtotal = (item.quantity * unitPrice) - item.discount;
+            item.appliedPromotionId = promo.id;
+          }
+          console.log('[MarketService] Tiered discount applied to', matchingItems.length, 'items');
+        }
       }
 
       return newCart;

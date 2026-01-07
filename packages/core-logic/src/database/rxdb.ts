@@ -4,11 +4,28 @@ import {
   RxCollection,
   RxJsonSchema,
   RxDocument,
+  addRxPlugin,
+  type RxStorage,
 } from 'rxdb';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
-// import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
-// wrappers
-// import { wrappedValidateZodStorage } from 'rxdb/plugins/validate-zod';
+import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
+import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
+
+const isDev = process.env.NODE_ENV === 'development';
+
+// Enable dev mode for better error messages (required for ignoreDuplicate)
+if (isDev) {
+  addRxPlugin(RxDBDevModePlugin);
+}
+
+// Get storage - wrap with validator in dev mode
+function getStorage(): RxStorage<any, any> {
+  const baseStorage = getRxStorageDexie();
+  if (isDev) {
+    return wrappedValidateAjvStorage({ storage: baseStorage });
+  }
+  return baseStorage;
+}
 
 // We will use 'dexie' as the underlying storage for RxDB because it's stable and widely supported.
 // But we are using the robust RxDB layer on top of it.
@@ -204,37 +221,48 @@ const cashierSchema: RxJsonSchema<RxCashier> = {
   required: ['id', 'username', 'pin_code', 'role'],
 };
 
-let dbPromise: Promise<MyDatabase> | null = null;
+// Handle HMR by persisting the promise on the global object
+const globalAny: any = globalThis;
+let dbPromise: Promise<MyDatabase> | null = globalAny.pulseDbPromise || null;
 
 export const createDatabase = async (): Promise<MyDatabase> => {
   if (dbPromise) return dbPromise;
 
   dbPromise = (async () => {
+    console.log('🔌 Initializing RxDB...');
+    
     const db = await createRxDatabase<MyDatabaseCollections>({
       name: 'pulse_pos_db',
-      storage: getRxStorageDexie(),
+      storage: getStorage(),
       ignoreDuplicate: true,
     });
 
-    await db.addCollections({
-      products: {
-        schema: productSchema,
-      },
-      transactions: {
-        schema: transactionSchema,
-      },
-      customers: {
-        schema: customerSchema,
-      },
-      cashiers: {
-        schema: cashierSchema,
-      },
-    });
+    // Check if collections already exist (reused DB instance)
+    if (!db.collections.products) {
+      console.log('📦 Creating collections...');
+      await db.addCollections({
+        products: {
+          schema: productSchema,
+        },
+        transactions: {
+          schema: transactionSchema,
+        },
+        customers: {
+          schema: customerSchema,
+        },
+        cashiers: {
+          schema: cashierSchema,
+        },
+      });
+    } else {
+      console.log('📦 Collections already exist, skipping creation.');
+    }
 
     console.log('✅ RxDB initialized with offline-first support');
     return db;
   })();
 
+  globalAny.pulseDbPromise = dbPromise;
   return dbPromise;
 };
 

@@ -416,6 +416,8 @@
       "bogo": "Buy X Get Y (BOGO)",
       "discount_percent": "Percentage Discount",
       "fixed_amount": "Fixed Amount Off",
+      "bundle": "Bundle Discount",
+      "tiered": "Tiered Discount",
       "happy_hour": "Happy Hour"
     },
     "product": "Product",
@@ -434,6 +436,8 @@
     "getQty": "Get Qty",
     "discountPercent": "Discount %",
     "fixedAmount": "Fixed Amount Off (BGN)",
+    "minItems": "Minimum Items",
+    "minAmount": "Minimum Amount (BGN)",
     "quickPresets": "Quick Discount Presets",
     "free": "100% OFF (FREE)",
     "off75": "75% OFF",

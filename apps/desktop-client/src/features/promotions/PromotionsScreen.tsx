@@ -26,7 +26,7 @@ export const PromotionsScreen: React.FC = () => {
   // Form State
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [promoType, setPromoType] = useState<'bogo' | 'discount_percent' | 'fixed_amount' | 'happy_hour'>('bogo');
+  const [promoType, setPromoType] = useState<'bogo' | 'discount_percent' | 'fixed_amount' | 'bundle' | 'tiered' | 'happy_hour'>('bogo');
   const [buySku, setBuySku] = useState('');
   const [getSku, setGetSku] = useState('');
   const [buyQty, setBuyQty] = useState(1);
@@ -105,6 +105,24 @@ export const PromotionsScreen: React.FC = () => {
         const product = products.find(p => p.barcode === buySku || p.sku === buySku);
         if (product) targetProducts = [product.id];
       }
+    } else if (promoType === 'bundle') {
+      rules = {
+        min_items: Number(buyQty),
+        discount_percent: Number(discountPercent)
+      };
+      if (buySku) {
+        const product = products.find(p => p.barcode === buySku || p.sku === buySku);
+        if (product) targetProducts = [product.id];
+      }
+    } else if (promoType === 'tiered') {
+      rules = {
+        min_amount: Number(minPurchase) || 0,
+        discount_percent: Number(discountPercent)
+      };
+      if (buySku) {
+        const product = products.find(p => p.barcode === buySku || p.sku === buySku);
+        if (product) targetProducts = [product.id];
+      }
     }
 
     const promoData: Promotion = {
@@ -165,8 +183,14 @@ export const PromotionsScreen: React.FC = () => {
       setFixedAmount(promo.rules.fixed_amount || 0);
     } else if (promo.type === 'happy_hour') {
       setDiscountPercent(promo.rules.discount_percent || 0);
+    } else if (promo.type === 'bundle') {
+      setDiscountPercent(promo.rules.discount_percent || 0);
+      setBuyQty(promo.rules.min_items || 2);
+    } else if (promo.type === 'tiered') {
+      setDiscountPercent(promo.rules.discount_percent || 0);
+      setMinPurchase(promo.rules.min_amount || 0);
     }
-    
+
     // Load conditions
     setStartDate(promo.start_date ? promo.start_date.split('T')[0] : '');
     setEndDate(promo.end_date ? promo.end_date.split('T')[0] : '');
@@ -289,12 +313,14 @@ export const PromotionsScreen: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.type')}</label>
                 <select
                   value={promoType}
-                  onChange={e => setPromoType(e.target.value as any)}
+                  onChange={e => setPromoType(e.target.value as 'bogo' | 'discount_percent' | 'fixed_amount' | 'bundle' | 'tiered' | 'happy_hour')}
                   className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                 >
                   <option value="bogo">{t('promotions.types.bogo')}</option>
                   <option value="discount_percent">{t('promotions.types.discount_percent')}</option>
                   <option value="fixed_amount">{t('promotions.types.fixed_amount')}</option>
+                  <option value="bundle">{t('promotions.types.bundle')}</option>
+                  <option value="tiered">{t('promotions.types.tiered')}</option>
                   <option value="happy_hour">{t('promotions.types.happy_hour')}</option>
                 </select>
               </div>
@@ -520,7 +546,7 @@ export const PromotionsScreen: React.FC = () => {
               </div>
             )}
 
-            {(promoType === 'discount_percent' || promoType === 'happy_hour') && (
+            {(promoType === 'discount_percent' || promoType === 'happy_hour' || promoType === 'bundle' || promoType === 'tiered') && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.discountPercent')}</label>
                 <input
@@ -530,6 +556,34 @@ export const PromotionsScreen: React.FC = () => {
                   className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
                   min="0"
                   max="100"
+                />
+              </div>
+            )}
+
+            {promoType === 'bundle' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.minItems')}</label>
+                <input
+                  type="number"
+                  value={buyQty}
+                  onChange={e => setBuyQty(Number(e.target.value))}
+                  className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                  min="2"
+                />
+              </div>
+            )}
+
+            {promoType === 'tiered' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{t('promotions.minAmount')}</label>
+                <input
+                  type="number"
+                  value={minPurchase || ''}
+                  onChange={e => setMinPurchase(e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:border-slate-600 dark:text-white"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
                 />
               </div>
             )}
@@ -741,6 +795,21 @@ export const PromotionsScreen: React.FC = () => {
               {promo.type === 'fixed_amount' && (
                 <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
                   {promo.rules.fixed_amount} BGN off
+                </div>
+              )}
+              {promo.type === 'happy_hour' && (
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  {promo.rules.discount_percent}% off (Happy Hour)
+                </div>
+              )}
+              {promo.type === 'bundle' && (
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  Buy {promo.rules.min_items}+ items, get {promo.rules.discount_percent}% off
+                </div>
+              )}
+              {promo.type === 'tiered' && (
+                <div className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                  Spend {promo.rules.min_amount}+ BGN, get {promo.rules.discount_percent}% off
                 </div>
               )}
 

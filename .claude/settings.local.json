@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node generate-report-pdf.js:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm install:*)",
+      "Bash(npm view dexie-react-hooks versions --json:*)",
+      "Bash(npm view:*)",
+      "WebFetch(domain:rxdb.info)"
+    ]
+  }
+}

@@ -376,6 +376,8 @@
       "bogo": "X Al Y Kazan (BOGO)",
       "discount_percent": "Yüzde İndirim",
       "fixed_amount": "Sabit Tutar İndirimi",
+      "bundle": "Paket İndirimi",
+      "tiered": "Kademeli İndirim",
       "happy_hour": "Mutlu Saat"
     },
     "product": "Ürün",
@@ -394,6 +396,8 @@
     "getQty": "Kazanma Miktarı",
     "discountPercent": "İndirim %",
     "fixedAmount": "Sabit İndirim Tutarı (BGN)",
+    "minItems": "Minimum Ürün Sayısı",
+    "minAmount": "Minimum Tutar (BGN)",
     "quickPresets": "Hızlı İndirim Ön Ayarları",
     "free": "100% İNDİRİM (ÜCRETSİZ)",
     "off75": "75% İNDİRİM",
