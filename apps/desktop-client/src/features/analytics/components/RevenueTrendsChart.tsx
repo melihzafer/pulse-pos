@@ -170,7 +170,7 @@ export const RevenueTrendsChart: React.FC<RevenueTrendsChartProps> = ({ dateRang
               <YAxis
                 stroke="#6b7280"
                 style={{ fontSize: '12px' }}
-                tickFormatter={(value: number) => `${value} BGN`}
+                tickFormatter={(value: number) => formatCurrency(value)}
               />
               <Tooltip
                 contentStyle={{
@@ -178,7 +178,7 @@ export const RevenueTrendsChart: React.FC<RevenueTrendsChartProps> = ({ dateRang
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${value.toFixed(2)} BGN`, 'Revenue']}
+                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
               />
               <Legend />
               <Line
@@ -188,7 +188,7 @@ export const RevenueTrendsChart: React.FC<RevenueTrendsChartProps> = ({ dateRang
                 strokeWidth={2}
                 dot={{ fill: '#3b82f6', r: 4 }}
                 activeDot={{ r: 6 }}
-                name="Revenue (BGN)"
+                name="Revenue (EUR)"
               />
             </LineChart>
           ) : (
@@ -202,7 +202,7 @@ export const RevenueTrendsChart: React.FC<RevenueTrendsChartProps> = ({ dateRang
               <YAxis
                 stroke="#6b7280"
                 style={{ fontSize: '12px' }}
-                tickFormatter={(value: number) => `${value} BGN`}
+                tickFormatter={(value: number) => formatCurrency(value)}
               />
               <Tooltip
                 contentStyle={{
@@ -210,10 +210,10 @@ export const RevenueTrendsChart: React.FC<RevenueTrendsChartProps> = ({ dateRang
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                 }}
-                formatter={(value: number) => [`${value.toFixed(2)} BGN`, 'Revenue']}
+                formatter={(value: number) => [formatCurrency(value), 'Revenue']}
               />
               <Legend />
-              <Bar dataKey="revenue" fill="#3b82f6" name="Revenue (BGN)" radius={[8, 8, 0, 0]} />
+              <Bar dataKey="revenue" fill="#3b82f6" name="Revenue (EUR)" radius={[8, 8, 0, 0]} />
             </BarChart>
           )}
         </ResponsiveContainer>

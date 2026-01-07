@@ -374,6 +374,10 @@ export class PulseDatabase extends Dexie {
       time_clock_entries: 'id, workspace_id, user_id, location_id, clock_in, is_approved, *_synced, *_dirty',
       activity_logs: 'id, workspace_id, user_id, action, entity_type, entity_id, created_at, *_synced'
     });
+
+    this.version(16).stores({
+      sales: 'id, workspace_id, location_id, user_id, customer_id, created_at, synced_at, *_synced, *_dirty'
+    });
   }
 }
 

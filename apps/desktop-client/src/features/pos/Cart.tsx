@@ -1,6 +1,15 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Plus, Minus, Trash2, Clock, PauseCircle, User, Sparkles, Heart, Tag, Eye } from 'lucide-react';
-import { useCartStore, formatCurrency, ParkedSale, Product, getUpsellProducts } from '@pulse/core-logic';
+import {
+  useCartStore,
+  formatCurrency,
+  ParkedSale,
+  Product,
+  getUpsellProducts,
+  useSettingsStore,
+  eurToBgn,
+  formatMoney,
+} from '@pulse/core-logic';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
 import { ParkedSalesModal } from './ParkedSalesModal';
@@ -16,6 +25,7 @@ interface CartProps {
 export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfile }) => {
   const { t } = useTranslation();
   const { items, removeFromCart, updateQuantity, clearCart, getTotal, getItemCount, parkOrder, restoreOrder, customer, addToCart } = useCartStore();
+  const { enableDualCurrencyDisplay } = useSettingsStore();
   const [showParkedSales, setShowParkedSales] = useState(false);
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [showPifModal, setShowPifModal] = useState(false);
@@ -202,8 +212,18 @@ export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfi
       {/* Total & Pay Button */}
       <div className="glass-panel p-4 rounded-xl">
         <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-200 dark:border-slate-700">
+
           <span className="text-lg text-gray-600 dark:text-slate-300 font-medium">{t('cart.total')}</span>
-          <span className="text-2xl font-mono font-bold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">{formatCurrency(total)}</span>
+          <div className="text-right">
+            <div className="text-2xl font-mono font-bold bg-gradient-to-r from-blue-600 to-cyan-600 dark:from-blue-400 dark:to-cyan-400 bg-clip-text text-transparent">
+              {formatMoney(total, 'EUR')}
+            </div>
+            {enableDualCurrencyDisplay && (
+              <div className="text-sm font-mono text-gray-500 dark:text-slate-400">
+                {formatMoney(eurToBgn(total), 'BGN')}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-4 gap-2">
@@ -230,7 +250,7 @@ export const Cart: React.FC<CartProps> = ({ onPay, products, onViewCustomerProfi
                 : "bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white shadow-lg hover:shadow-2xl hover:scale-[1.02]"
             )}
           >
-            {t('cart.pay')} {formatCurrency(total)}
+            {t('cart.pay')} {formatMoney(total, 'EUR')}
           </button>
         </div>
       </div>

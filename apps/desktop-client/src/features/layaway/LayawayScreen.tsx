@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Clock, CheckCircle2, XCircle, Eye, DollarSign, AlertCircle } from 'lucide-react';
-import { LayawayService } from '@pulse/core-logic';
+import { LayawayService, formatMoney } from '@pulse/core-logic';
 import type { LayawayOrder } from '@pulse/core-logic';
 import { toast } from 'sonner';
 import { CreateLayawayModal } from './CreateLayawayModal';
@@ -119,7 +119,7 @@ export const LayawayScreen: React.FC = () => {
       await loadLayawayOrders();
       await loadStats();
       setIsViewModalOpen(false);
-      toast.success(`Layaway cancelled. Refund: ${result.refundAmount.toFixed(2)} BGN`);
+      toast.success(`Layaway cancelled. Refund: ${formatMoney(result.refundAmount)}`);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Failed to cancel layaway');
     }
@@ -192,19 +192,19 @@ export const LayawayScreen: React.FC = () => {
           <div className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 p-4 rounded-xl border border-emerald-100 dark:border-emerald-800">
             <div className="text-sm text-emerald-600 dark:text-emerald-400 font-medium mb-1">Total Value</div>
             <div className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">
-              {stats.totalValue.toFixed(2)} BGN
+              {formatMoney(stats.totalValue)}
             </div>
           </div>
           <div className="bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-900/20 dark:to-purple-900/20 p-4 rounded-xl border border-violet-100 dark:border-violet-800">
             <div className="text-sm text-violet-600 dark:text-violet-400 font-medium mb-1">Collected</div>
             <div className="text-2xl font-bold text-violet-900 dark:text-violet-100">
-              {stats.totalCollected.toFixed(2)} BGN
+              {formatMoney(stats.totalCollected)}
             </div>
           </div>
           <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 p-4 rounded-xl border border-amber-100 dark:border-amber-800">
             <div className="text-sm text-amber-600 dark:text-amber-400 font-medium mb-1">Outstanding</div>
             <div className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-              {stats.totalOutstanding.toFixed(2)} BGN
+              {formatMoney(stats.totalOutstanding)}
             </div>
           </div>
         </div>
@@ -302,13 +302,13 @@ export const LayawayScreen: React.FC = () => {
                         {formatDate(order.created_at)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
-                        {order.total.toFixed(2)} BGN
+                        {formatMoney(order.total)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-600 dark:text-slate-300">
-                        {order.deposit_amount.toFixed(2)} BGN
+                        {formatMoney(order.deposit_amount)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-amber-600 dark:text-amber-400">
-                        {order.balance_due.toFixed(2)} BGN
+                        {formatMoney(order.balance_due)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
                         <div className="flex items-center justify-end gap-2">

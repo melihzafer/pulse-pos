@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Search, X, Star, LayoutGrid, Tag } from 'lucide-react';
 import Fuse from 'fuse.js';
-import { Product, MarketService, Promotion } from '@pulse/core-logic';
+import { Product, MarketService, Promotion, formatMoney } from '@pulse/core-logic';
 import { useRxCollection } from 'rxdb-hooks';
 import clsx from 'clsx';
 import { useTranslation } from 'react-i18next';
@@ -156,7 +156,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
     } else if (promo.type === 'discount_percent' || promo.type === 'happy_hour') {
       return `${rules.discount_percent}% OFF`;
     } else if (promo.type === 'fixed_amount') {
-      return `${rules.fixed_amount} BGN OFF`;
+      return `${formatMoney(rules.fixed_amount)} OFF`;
     }
     
     return 'PROMO';
@@ -321,7 +321,7 @@ export const ProductGrid: React.FC<ProductGridProps> = ({ products, onProductCli
             )}
             <h3 className="font-semibold text-gray-900 dark:text-white mb-1 line-clamp-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 transition-colors relative z-10 pr-6">{product.name}</h3>
             <p className="text-blue-600 dark:text-blue-400 font-mono text-lg font-bold mb-2 group-hover:text-blue-700 dark:group-hover:text-blue-300 relative z-10">
-              {product.sale_price.toFixed(2)} BGN
+              {formatMoney(product.sale_price)}
             </p>
             <div className="flex items-center justify-between text-sm relative z-10">
               <span className="text-gray-500 dark:text-slate-400">{t('pos.stock')}:</span>

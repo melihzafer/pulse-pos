@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Printer, Wifi, Database, Globe, FileText, Clock, Bell } from 'lucide-react';
+import { Printer, Wifi, Database, Globe, FileText, Clock, Bell, Euro } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { CashierManagement } from './CashierManagement';
-import { useSettingsStore } from './store';
+import { useSettingsStore, FIXED_RATE_EUR_TO_BGN } from './store';
 
 
 
@@ -162,6 +162,36 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onThemeChange })
               className="w-full bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-4 py-2 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
               placeholder="20"
             />
+          </div>
+
+          <div className="pt-4 border-t border-gray-200 dark:border-slate-700">
+            <label className="flex items-center gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={settings.enableDualCurrencyDisplay}
+                onChange={(e) => updateSettings({ enableDualCurrencyDisplay: e.target.checked })}
+                className="w-5 h-5 rounded border-gray-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <Euro size={16} className="text-blue-500" />
+                  <span className="text-gray-900 dark:text-white font-medium">
+                    {t('settings.receipt.enableDualCurrency', 'Enable Dual Currency Display')}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">
+                  {t('settings.receipt.dualCurrencyHelp', 'Show totals and change in both EUR and BGN')}
+                </p>
+                <div className="mt-2 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                    {t('settings.receipt.mainCurrency', 'Main Currency')}: <span className="font-bold">EUR</span>
+                  </p>
+                  <p className="text-xs text-blue-600 dark:text-blue-400">
+                    {t('settings.receipt.fixedRate', 'Fixed Rate')}: 1 EUR = {FIXED_RATE_EUR_TO_BGN} BGN
+                  </p>
+                </div>
+              </div>
+            </label>
           </div>
         </div>
       </section>
@@ -331,10 +361,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({ onThemeChange })
             </label>
             {settings.notifications?.highValueSale && (
               <div className="ml-8">
-                <label className="block text-sm text-gray-600 dark:text-slate-400 mb-1">{t('settings.notifications.amount', 'Amount (BGN)')}</label>
+                <label className="block text-sm text-gray-600 dark:text-slate-400 mb-1">{t('settings.notifications.amount', 'Amount (EUR)')}</label>
                 <input
                   type="number"
-                  value={settings.notifications?.highValueThreshold ?? 1000}
+                  value={settings.notifications?.highValueThreshold ?? 500}
                   onChange={(e) => updateSettings({ notifications: { ...settings.notifications, highValueThreshold: parseInt(e.target.value) || 0 } })}
                   className="w-32 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-700 rounded-lg px-3 py-1 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
                 />

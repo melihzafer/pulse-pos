@@ -1,5 +1,6 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { formatMoney } from '@pulse/core-logic';
 import type { ReceiptTemplate, ReceiptData, ReceiptComponent } from './types';
 
 interface ReceiptPreviewProps {
@@ -94,19 +95,19 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
       case 'customer_tier':
         return `Tier: ${mergedData.customer?.tier || 'Bronze'}`;
       case 'subtotal':
-        return `Subtotal: ${mergedData.subtotal.toFixed(2)} BGN`;
+        return `Subtotal: ${formatMoney(mergedData.subtotal)}`;
       case 'discount_total':
-        return `Discount: -${mergedData.discountTotal.toFixed(2)} BGN`;
+        return `Discount: -${formatMoney(mergedData.discountTotal)}`;
       case 'tax_total':
-        return `VAT (20%): ${mergedData.taxTotal.toFixed(2)} BGN`;
+        return `VAT (20%): ${formatMoney(mergedData.taxTotal)}`;
       case 'total':
-        return `TOTAL: ${mergedData.total.toFixed(2)} BGN`;
+        return `TOTAL: ${formatMoney(mergedData.total)}`;
       case 'payment_method':
         return `Payment: ${mergedData.paymentMethod}`;
       case 'amount_tendered':
-        return `Tendered: ${mergedData.amountTendered?.toFixed(2)} BGN`;
+        return `Tendered: ${formatMoney(mergedData.amountTendered || 0)}`;
       case 'change':
-        return `Change: ${mergedData.change?.toFixed(2)} BGN`;
+        return `Change: ${formatMoney(mergedData.change || 0)}`;
       case 'promo_message':
         return mergedData.promotionMessage || '';
       default:
@@ -220,21 +221,21 @@ export const ReceiptPreview: React.FC<ReceiptPreviewProps> = ({
           <div key={component.id} style={{ width: '100%', fontSize: '12px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
               <span>Subtotal:</span>
-              <span>{mergedData.subtotal.toFixed(2)} BGN</span>
+              <span>{formatMoney(mergedData.subtotal)}</span>
             </div>
             {mergedData.discountTotal > 0 && (
               <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0', color: '#22c55e' }}>
                 <span>Discount:</span>
-                <span>-{mergedData.discountTotal.toFixed(2)} BGN</span>
+                <span>-{formatMoney(mergedData.discountTotal)}</span>
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '2px 0' }}>
               <span>VAT (20%):</span>
-              <span>{mergedData.taxTotal.toFixed(2)} BGN</span>
+              <span>{formatMoney(mergedData.taxTotal)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', fontWeight: 'bold', fontSize: '14px', borderTop: '1px solid #333', marginTop: '4px' }}>
               <span>TOTAL:</span>
-              <span>{mergedData.total.toFixed(2)} BGN</span>
+              <span>{formatMoney(mergedData.total)}</span>
             </div>
           </div>
         );

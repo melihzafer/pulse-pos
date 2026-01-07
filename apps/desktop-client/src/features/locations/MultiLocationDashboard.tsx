@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocationService } from '@pulse/core-logic';
+import { LocationService, formatMoney, MAIN_CURRENCY } from '@pulse/core-logic';
 import type { Location } from '@pulse/core-logic';
 import {
   BarChart,
@@ -47,20 +47,20 @@ export const MultiLocationDashboard: React.FC = () => {
         const sales = await locationService.getLocationSales(location.id, dateRange);
         const inventory = await locationService.getLocationInventory(location.id);
 
-        const todaySales = sales.reduce((sum, sale) => sum + sale.total, 0);
+        const todaySales = sales.reduce((sum, sale) => sum + (sale.total || 0), 0);
         const todayTransactions = sales.length;
-        const totalStock = inventory.reduce((sum, item) => sum + item.stock_quantity, 0);
+        const totalStock = inventory.reduce((sum, item) => sum + (item.stock_quantity || 0), 0);
         const stockValue = inventory.reduce(
-          (sum, item) => sum + item.stock_quantity * item.cost_price,
+          (sum, item) => sum + ((item.stock_quantity || 0) * (item.cost_price || 0)),
           0
         );
 
         return {
           location,
-          todaySales,
+          todaySales: isNaN(todaySales) ? 0 : todaySales,
           todayTransactions,
-          totalStock,
-          stockValue,
+          totalStock: isNaN(totalStock) ? 0 : totalStock,
+          stockValue: isNaN(stockValue) ? 0 : stockValue,
         };
       });
 
@@ -138,7 +138,7 @@ export const MultiLocationDashboard: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('common.totalSales', 'Total Sales')}</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(totalSales)}
+                {formatMoney(totalSales)}
               </h3>
             </div>
           </div>
@@ -189,7 +189,7 @@ export const MultiLocationDashboard: React.FC = () => {
             <div>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">{t('inventory.stockValue', 'Stock Value')}</p>
               <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                {new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN', maximumFractionDigits: 0 }).format(totalStockValue)}
+                {formatMoney(totalStockValue)}
               </h3>
             </div>
           </div>
@@ -209,11 +209,11 @@ export const MultiLocationDashboard: React.FC = () => {
               <BarChart data={salesByLocation} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" opacity={0.1} />
                 <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${value} BGN`} />
+                <YAxis stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${value} ${MAIN_CURRENCY}`} />
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [`${value.toFixed(2)} BGN`, 'Sales']}
+                  formatter={(value: number) => [`${value.toFixed(2)} ${MAIN_CURRENCY}`, 'Sales']}
                 />
                 <Bar dataKey="sales" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
               </BarChart>
@@ -243,7 +243,7 @@ export const MultiLocationDashboard: React.FC = () => {
                 <Tooltip
                   contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
                   itemStyle={{ color: '#fff' }}
-                  formatter={(value: number) => [`${value.toFixed(2)} BGN`, 'Value']}
+                  formatter={(value: number) => [`${value.toFixed(2)} ${MAIN_CURRENCY}`, 'Value']}
                 />
                 <Legend verticalAlign="bottom" height={36} iconType="circle" />
               </PieChart>
@@ -296,7 +296,7 @@ export const MultiLocationDashboard: React.FC = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium text-gray-900 dark:text-white">
-                    {stat.todaySales.toFixed(2)} {t('common.currency')}
+                    {formatMoney(stat.todaySales)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                     {stat.todayTransactions}
@@ -305,31 +305,29 @@ export const MultiLocationDashboard: React.FC = () => {
                     {stat.totalStock}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
-                    {stat.stockValue.toFixed(2)} {t('common.currency')}
+                    {formatMoney(stat.stockValue)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-500 dark:text-gray-400">
                     {stat.todayTransactions > 0
-                      ? (stat.todaySales / stat.todayTransactions).toFixed(2)
-                      : '0.00'}{' '}
-                    {t('common.currency')}
+                      ? formatMoney(stat.todaySales / stat.todayTransactions)
+                      : formatMoney(0)}
                   </td>
                 </tr>
               ))}
               <tr className="bg-gray-50 dark:bg-slate-700/50 font-semibold">
                 <td className="px-6 py-4 whitespace-nowrap text-gray-900 dark:text-white">{t('common.total', 'Total')}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white">
-                  {totalSales.toFixed(2)} {t('common.currency')}
+                  {formatMoney(totalSales)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white">{totalTransactions}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white">{totalStock}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white">
-                  {totalStockValue.toFixed(2)} {t('common.currency')}
+                  {formatMoney(totalStockValue)}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white">
                   {totalTransactions > 0
-                    ? (totalSales / totalTransactions).toFixed(2)
-                    : '0.00'}{' '}
-                  {t('common.currency')}
+                    ? formatMoney(totalSales / totalTransactions)
+                    : formatMoney(0)}
                 </td>
               </tr>
             </tbody>

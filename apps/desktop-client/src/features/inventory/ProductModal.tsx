@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { X, Save, Plus, Trash2, Percent, DollarSign, TrendingUp, Calculator, ArrowRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Product, db, ProductBarcode } from '@pulse/core-logic';
+import { Product, db, ProductBarcode, formatMoney } from '@pulse/core-logic';
 import { generateId } from '@pulse/core-logic/src/utils';
 
 // Margin preset buttons
@@ -381,7 +381,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({ isOpen, onClose, pro
                         <span className={`ml-1.5 font-bold font-mono ${
                           profitMetrics.profit >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                         }`}>
-                          {profitMetrics.profit.toFixed(2)} BGN
+                          {formatMoney(profitMetrics.profit)}
                         </span>
                       </div>
                     </div>

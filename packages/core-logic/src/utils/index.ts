@@ -3,4 +3,5 @@ export * from './uuid';
 export * from './date';
 export * from './barcode';
 export * from './upsell';
+export * from './currencyConfig';
 

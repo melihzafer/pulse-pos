@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, DollarSign } from 'lucide-react';
-import { LayawayService } from '@pulse/core-logic';
+import { LayawayService, formatMoney } from '@pulse/core-logic';
 import type { LayawayOrder } from '@pulse/core-logic';
 import { toast } from 'sonner';
 
@@ -123,7 +123,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm text-amber-700 dark:text-amber-300 font-medium">Balance Due</span>
               <span className="text-2xl font-bold text-amber-900 dark:text-amber-100">
-                {order.balance_due.toFixed(2)} BGN
+                {formatMoney(order.balance_due)}
               </span>
             </div>
           </div>
@@ -131,7 +131,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
           {/* Amount Input */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-2">
-              Payment Amount (BGN)
+              Payment Amount (EUR)
             </label>
             <input
               type="number"
@@ -204,7 +204,7 @@ export const RecordPaymentModal: React.FC<RecordPaymentModalProps> = ({
               <div className="flex items-center justify-between text-sm">
                 <span className="text-blue-700 dark:text-blue-300">Remaining Balance</span>
                 <span className="text-lg font-bold text-blue-900 dark:text-blue-100">
-                  {(order.balance_due - parseFloat(amount)).toFixed(2)} BGN
+                  {formatMoney(order.balance_due - parseFloat(amount))}
                 </span>
               </div>
               {order.balance_due - parseFloat(amount) <= 0 && (

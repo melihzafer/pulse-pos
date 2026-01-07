@@ -6,7 +6,10 @@
       "Bash(npm install:*)",
       "Bash(npm view dexie-react-hooks versions --json:*)",
       "Bash(npm view:*)",
-      "WebFetch(domain:rxdb.info)"
+      "WebFetch(domain:rxdb.info)",
+      "Bash(npm run build:core:*)",
+      "Bash(npm run)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -192,7 +192,7 @@ export const TopProductsChart: React.FC<TopProductsChartProps> = ({ dateRange })
                 type="number"
                 stroke="#6b7280"
                 style={{ fontSize: '12px' }}
-                tickFormatter={(value: number) => viewMode === 'quantity' ? value : `${value} BGN`}
+                tickFormatter={(value: number) => viewMode === 'quantity' ? String(value) : formatCurrency(value)}
               />
               <YAxis
                 dataKey="name"

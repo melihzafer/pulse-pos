@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Calendar, User, Package, CheckCircle2, XCircle, DollarSign } from 'lucide-react';
-import { LayawayService } from '@pulse/core-logic';
+import { LayawayService, formatMoney } from '@pulse/core-logic';
 import type { LayawayOrder, LayawayOrderItem, LayawayPayment, Product, Customer } from '@pulse/core-logic';
 import { toast } from 'sonner';
 
@@ -174,18 +174,18 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
             <div className="space-y-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-slate-400">Total Amount</span>
-                <span className="font-medium text-gray-900 dark:text-white">{order.total.toFixed(2)} BGN</span>
+                <span className="font-medium text-gray-900 dark:text-white">{formatMoney(order.total)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-slate-400">Paid</span>
                 <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                  {totalPaid.toFixed(2)} BGN
+                  {formatMoney(totalPaid)}
                 </span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-slate-400">Balance Due</span>
                 <span className="font-medium text-amber-600 dark:text-amber-400">
-                  {order.balance_due.toFixed(2)} BGN
+                  {formatMoney(order.balance_due)}
                 </span>
               </div>
               <div className="pt-2">
@@ -237,10 +237,10 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
                         {item.quantity}
                       </td>
                       <td className="px-4 py-3 text-sm text-right text-gray-600 dark:text-slate-400">
-                        {item.unit_price.toFixed(2)} BGN
+                        {formatMoney(item.unit_price)}
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium text-gray-900 dark:text-white">
-                        {item.subtotal.toFixed(2)} BGN
+                        {formatMoney(item.subtotal)}
                       </td>
                     </tr>
                   ))}
@@ -251,7 +251,7 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
                       Subtotal
                     </td>
                     <td className="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-white">
-                      {order.subtotal.toFixed(2)} BGN
+                      {formatMoney(order.subtotal)}
                     </td>
                   </tr>
                   <tr>
@@ -259,7 +259,7 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
                       Tax (20%)
                     </td>
                     <td className="px-4 py-2 text-sm text-right font-medium text-gray-900 dark:text-white">
-                      {order.tax.toFixed(2)} BGN
+                      {formatMoney(order.tax)}
                     </td>
                   </tr>
                   <tr>
@@ -267,7 +267,7 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
                       Total
                     </td>
                     <td className="px-4 py-2 text-sm text-right font-bold text-gray-900 dark:text-white">
-                      {order.total.toFixed(2)} BGN
+                      {formatMoney(order.total)}
                     </td>
                   </tr>
                 </tfoot>
@@ -298,7 +298,7 @@ export const ViewLayawayModal: React.FC<ViewLayawayModalProps> = ({
                       </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900 dark:text-white">
-                          {payment.amount.toFixed(2)} BGN
+                          {formatMoney(payment.amount)}
                         </div>
                         <div className="text-xs text-gray-600 dark:text-slate-400">
                           {formatDate(payment.payment_date)}

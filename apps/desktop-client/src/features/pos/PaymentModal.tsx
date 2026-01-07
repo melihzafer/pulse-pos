@@ -1,7 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, CreditCard, Banknote, Check, ArrowRightLeft, PieChart, Trash2, Plus, Gift, Wallet } from 'lucide-react';
+import { X, CreditCard, Banknote, Check, PieChart, Trash2, Plus, Gift, Wallet } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { PaymentMethod, useCartStore, db, GiftCardService } from '@pulse/core-logic';
+import {
+  PaymentMethod,
+  useCartStore,
+  db,
+  GiftCardService,
+  useSettingsStore,
+  FIXED_RATE_EUR_TO_BGN,
+  eurToBgn,
+  formatMoney,
+} from '@pulse/core-logic';
 import clsx from 'clsx';
 import { GiftCardRedeemModal } from './GiftCardRedeemModal';
 import { toast } from 'sonner';
@@ -16,43 +25,40 @@ interface PaymentModalProps {
 export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, total, onComplete }) => {
   const { t } = useTranslation();
   const { customer, items } = useCartStore();
+  const { enableDualCurrencyDisplay } = useSettingsStore();
   const [method, setMethod] = useState<PaymentMethod>('cash');
   const [amountTendered, setAmountTendered] = useState<string>('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [paymentCurrency, setPaymentCurrency] = useState<'BGN' | 'EUR'>('BGN');
-  const [changeCurrency, setChangeCurrency] = useState<'BGN' | 'EUR'>('BGN');
-  
+
   // Split payment state
   const [splitPayments, setSplitPayments] = useState<{ method: PaymentMethod, amount: number }[]>([]);
   const [splitAmount, setSplitAmount] = useState<string>('');
   const [splitMethod, setSplitMethod] = useState<PaymentMethod>('cash');
-  
+
   // Gift card state
   const [isGiftCardModalOpen, setIsGiftCardModalOpen] = useState(false);
   const [giftCardRedemptions, setGiftCardRedemptions] = useState<{ cardNumber: string; amount: number }[]>([]);
-  
+
   // Store credit state
   const [customerCreditBalance, setCustomerCreditBalance] = useState(0);
   const [storeCreditApplied, setStoreCreditApplied] = useState(0);
 
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const FIXED_RATE = 1.95583;
+
 
   useEffect(() => {
     if (isOpen) {
       setMethod('cash');
       setAmountTendered('');
       setIsProcessing(false);
-      setPaymentCurrency('BGN');
-      setChangeCurrency('BGN');
       setSplitPayments([]);
       setSplitAmount('');
       setSplitMethod('cash');
       setGiftCardRedemptions([]);
       setIsGiftCardModalOpen(false);
       setStoreCreditApplied(0);
-      
+
       // Load customer credit balance
       if (customer?.id) {
         db.customers.get(customer.id).then((c) => {
@@ -69,34 +75,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
 
   if (!isOpen) return null;
 
-  // Calculate totals based on payment currency
-  const totalDisplay = paymentCurrency === 'BGN' ? total : total / FIXED_RATE;
-  
-  // Calculate gift card redemption total
+  // Total is already in EUR (main currency)
+  const totalInEur = total;
+  const totalInBgn = eurToBgn(total);
+
+  // Calculate gift card redemption total (in EUR)
   const giftCardTotal = giftCardRedemptions.reduce((sum, gc) => sum + gc.amount, 0);
-  
+
   // Split payment calculations (subtract gift cards and store credit from total)
-  const adjustedTotal = totalDisplay - giftCardTotal - storeCreditApplied;
-  
-  // Calculate change
+  const adjustedTotal = totalInEur - giftCardTotal - storeCreditApplied;
+
+  // Calculate change (in EUR)
   const amount = parseFloat(amountTendered || '0');
-  const changeInPaymentCurrency = method === 'cash' ? Math.max(0, amount - adjustedTotal) : 0;
-  
-  // Convert change to display currency
-  let changeDisplay = 0;
-  if (paymentCurrency === changeCurrency) {
-    changeDisplay = changeInPaymentCurrency;
-  } else if (paymentCurrency === 'BGN' && changeCurrency === 'EUR') {
-    changeDisplay = changeInPaymentCurrency / FIXED_RATE;
-  } else if (paymentCurrency === 'EUR' && changeCurrency === 'BGN') {
-    changeDisplay = changeInPaymentCurrency * FIXED_RATE;
-  }
+  const changeInEur = method === 'cash' ? Math.max(0, amount - adjustedTotal) : 0;
+  const changeInBgn = eurToBgn(changeInEur);
 
   const remainingAmount = adjustedTotal - splitPayments.reduce((sum, p) => sum + p.amount, 0);
   const canAddSplit = parseFloat(splitAmount) > 0 && parseFloat(splitAmount) <= remainingAmount + 0.01;
 
-  const canComplete = giftCardTotal >= totalDisplay || (method === 'split' 
-    ? Math.abs(remainingAmount) < 0.01 
+  const canComplete = giftCardTotal >= totalInEur || (method === 'split'
+    ? Math.abs(remainingAmount) < 0.01
     : (method === 'card' || (amount >= adjustedTotal)));
 
   const handleAddSplit = () => {
@@ -115,25 +113,25 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
   const handleGiftCardRedeem = async (cardNumber: string, amount: number) => {
     try {
       const result = await GiftCardService.redeemGiftCard(cardNumber, amount);
-      
+
       if (!result.success) {
         toast.error(result.message);
         return;
       }
-      
+
       // Add to redemptions list
       setGiftCardRedemptions([...giftCardRedemptions, { cardNumber, amount }]);
       toast.success(
         t('giftCard.redeemed', {
-          defaultValue: 'Redeemed {{amount}} BGN from gift card',
+          defaultValue: 'Redeemed {{amount}} EUR from gift card',
           amount: amount.toFixed(2),
         })
       );
-      
+
       if (result.newBalance > 0) {
         toast.info(
           t('giftCard.remainingBalance', {
-            defaultValue: 'Remaining balance: {{balance}} BGN',
+            defaultValue: 'Remaining balance: {{balance}} EUR',
             balance: result.newBalance.toFixed(2),
           })
         );
@@ -156,7 +154,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
     }
 
     // Calculate max amount that can be applied (minimum of credit balance and remaining total)
-    const remainingTotal = totalDisplay - giftCardTotal - storeCreditApplied;
+    const remainingTotal = totalInEur - giftCardTotal - storeCreditApplied;
     const maxApplicable = Math.min(customerCreditBalance - storeCreditApplied, remainingTotal);
 
     if (maxApplicable <= 0) {
@@ -167,7 +165,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
     setStoreCreditApplied(storeCreditApplied + maxApplicable);
     toast.success(
       t('storeCredit.applied', {
-        defaultValue: 'Applied {{amount}} BGN store credit',
+        defaultValue: 'Applied {{amount}} EUR store credit',
         amount: maxApplicable.toFixed(2),
       })
     );
@@ -258,7 +256,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
       if (method === 'split') {
         onComplete('split', total, 0, splitPayments);
       } else {
-        onComplete(method, amount, changeInPaymentCurrency);
+        onComplete(method, amount, changeInEur);
       }
     }, 500);
   };
@@ -272,11 +270,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
     }
   };
 
-  const formatMoney = (amount: number, currency: 'BGN' | 'EUR') => {
-    return new Intl.NumberFormat(currency === 'BGN' ? 'bg-BG' : 'de-DE', {
-      style: 'currency',
-      currency: currency
-    }).format(amount);
+  // Local formatMoney helper that uses the imported one
+  const formatAmount = (amount: number, currency: 'EUR' | 'BGN') => {
+    return formatMoney(amount, currency);
   };
 
   return (
@@ -294,31 +290,41 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
         <div className="p-6 space-y-6 overflow-y-auto scrollbar-thin">
           {/* Total Amount & Currency Toggle */}
           <div className="text-center relative">
-            <div className="absolute right-0 top-0">
-              <button
-                onClick={() => setPaymentCurrency(prev => prev === 'BGN' ? 'EUR' : 'BGN')}
-                className="flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-300 transition-colors"
-              >
-                <ArrowRightLeft size={12} />
-                {paymentCurrency}
-              </button>
-            </div>
             <p className="text-sm text-gray-500 dark:text-slate-400 mb-1">{t('payment.totalAmount')}</p>
-            <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 font-mono">
-              {formatMoney(totalDisplay, paymentCurrency)}
-            </p>
+
+            <div className="flex flex-col items-center">
+              <p className="text-4xl font-bold text-blue-600 dark:text-blue-400 font-mono">
+                {formatAmount(totalInEur, 'EUR')}
+              </p>
+
+              {enableDualCurrencyDisplay && (
+                <div className="flex items-center gap-2 mt-1 px-3 py-1 bg-blue-50 dark:bg-blue-900/20 rounded-full">
+                  <span className="text-lg font-semibold text-gray-600 dark:text-slate-300 font-mono">
+                    {formatAmount(totalInBgn, 'BGN')}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    (1 EUR = {FIXED_RATE_EUR_TO_BGN} BGN)
+                  </span>
+                </div>
+              )}
+            </div>
+
             {giftCardTotal > 0 && (
               <div className="mt-2 p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
                 <p className="text-xs text-purple-700 dark:text-purple-300 mb-1">
                   {t('giftCard.afterGiftCards', 'After Gift Cards')}
                 </p>
-                <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 font-mono">
-                  {formatMoney(adjustedTotal, paymentCurrency)}
-                </p>
+                <div className="flex flex-col items-center">
+                  <p className="text-2xl font-bold text-purple-700 dark:text-purple-300 font-mono">
+                    {formatAmount(adjustedTotal, 'EUR')}
+                  </p>
+                  {enableDualCurrencyDisplay && (
+                    <p className="text-sm font-medium text-purple-600 dark:text-purple-400 font-mono">
+                      {formatAmount(eurToBgn(adjustedTotal), 'BGN')}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-            {paymentCurrency === 'EUR' && (
-              <p className="text-xs text-gray-400 mt-1">1 EUR = {FIXED_RATE} BGN</p>
             )}
           </div>
 
@@ -333,7 +339,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
                 <div key={idx} className="flex justify-between items-center text-sm">
                   <span className="font-mono text-gray-600 dark:text-slate-400">{gc.cardNumber}</span>
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-purple-700 dark:text-purple-300">-{formatMoney(gc.amount, paymentCurrency)}</span>
+                    <span className="font-bold text-purple-700 dark:text-purple-300">-{formatAmount(gc.amount, 'EUR')}</span>
                     <button
                       onClick={() => {
                         const newRedemptions = [...giftCardRedemptions];
@@ -349,7 +355,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
               ))}
               <div className="pt-2 border-t border-purple-200 dark:border-purple-800 flex justify-between font-bold">
                 <span className="text-gray-700 dark:text-slate-300">{t('giftCard.totalApplied', 'Total Applied')}</span>
-                <span className="text-purple-700 dark:text-purple-300">-{formatMoney(giftCardTotal, paymentCurrency)}</span>
+                <span className="text-purple-700 dark:text-purple-300">-{formatAmount(giftCardTotal, 'EUR')}</span>
               </div>
             </div>
           )}
@@ -374,7 +380,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
                   <span>{t('storeCredit.available', 'Available Store Credit')}</span>
                 </div>
                 <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                  {formatMoney(customerCreditBalance, paymentCurrency)}
+                  {formatAmount(customerCreditBalance, 'EUR')}
                 </span>
               </div>
               {storeCreditApplied > 0 && (
@@ -382,7 +388,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
                   <span className="text-gray-600 dark:text-slate-400">{t('storeCredit.applied', 'Applied')}</span>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-emerald-700 dark:text-emerald-300">
-                      -{formatMoney(storeCreditApplied, paymentCurrency)}
+                      -{formatAmount(storeCreditApplied, 'EUR')}
                     </span>
                     <button
                       onClick={() => setStoreCreditApplied(0)}
@@ -453,7 +459,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
             <div className="space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-                  {t('payment.amountTendered')} ({paymentCurrency})
+                  {t('payment.amountTendered')} (EUR)
                 </label>
                 <div className="relative">
                   <input
@@ -472,21 +478,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
               <div className="flex justify-between items-center p-4 bg-gray-50 dark:bg-slate-800 rounded-xl relative overflow-hidden">
                 <div className="flex items-center gap-2 z-10">
                   <span className="text-gray-600 dark:text-slate-400 font-medium">{t('payment.change')}</span>
-                  <button
-                    onClick={() => setChangeCurrency(prev => prev === 'BGN' ? 'EUR' : 'BGN')}
-                    className="flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors"
-                    title="Switch Change Currency"
-                  >
-                    <ArrowRightLeft size={10} />
-                    {changeCurrency}
-                  </button>
                 </div>
-                <span className={clsx(
-                  "text-xl font-bold font-mono z-10",
-                  changeInPaymentCurrency >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500"
-                )}>
-                  {formatMoney(changeDisplay, changeCurrency)}
-                </span>
+                <div className="flex flex-col items-end z-10">
+                  <span className={clsx(
+                    "text-xl font-bold font-mono",
+                    changeInEur >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500"
+                  )}>
+                    {formatAmount(changeInEur, 'EUR')}
+                  </span>
+
+                  {enableDualCurrencyDisplay && changeInEur > 0 && (
+                    <span className="text-sm font-mono text-gray-500 dark:text-slate-500">
+                      ~ {formatAmount(changeInBgn, 'BGN')}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -497,10 +503,10 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
               <div className="flex justify-between items-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                 <span className="font-medium text-gray-700 dark:text-slate-300">{t('payment.remaining')}</span>
                 <span className={clsx("font-bold font-mono text-xl", remainingAmount > 0.01 ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400")}>
-                  {formatMoney(remainingAmount, paymentCurrency)}
+                  {formatAmount(remainingAmount, 'EUR')}
                 </span>
               </div>
-              
+
               {/* List of payments */}
               <div className="space-y-2 max-h-40 overflow-y-auto">
                 {splitPayments.map((p, i) => (
@@ -510,7 +516,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onClose, tot
                       <span className="capitalize">{t(`payment.${p.method}`)}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono font-bold text-gray-900 dark:text-white">{formatMoney(p.amount, paymentCurrency)}</span>
+                      <span className="font-mono font-bold text-gray-900 dark:text-white">{formatAmount(p.amount, 'EUR')}</span>
                       <button onClick={() => handleRemoveSplit(i)} className="text-red-500 hover:text-red-600 p-1">
                         <Trash2 size={16} />
                       </button>

@@ -1,16 +1,19 @@
+// Re-export configuration and types
+export * from './currencyConfig';
+
+import { formatMoney, MAIN_CURRENCY, CurrencyCode } from './currencyConfig';
+
 /**
- * Format a number as currency
+ * Format a number as currency (Alias for formatMoney for backward compatibility)
  * @param amount - The amount to format
- * @param currencyCode - ISO currency code (default: BGN)
+ * @param currencyCode - ISO currency code (default: MAIN_CURRENCY)
  * @returns Formatted currency string
  */
-export function formatCurrency(amount: number, currencyCode: string = 'BGN'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currencyCode,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(amount);
+export function formatCurrency(amount: number, currencyCode: string = MAIN_CURRENCY): string {
+  // Cast string to CurrencyCode if it matches, otherwise default to MAIN_CURRENCY or try to use it
+  // This handles the case where 'en-US' or other strings might have been passed
+  const code = (currencyCode === 'BGN' || currencyCode === 'EUR') ? currencyCode : MAIN_CURRENCY;
+  return formatMoney(amount, code);
 }
 
 /**

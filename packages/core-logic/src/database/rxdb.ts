@@ -10,6 +10,10 @@ import {
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import { RxDBDevModePlugin } from 'rxdb/plugins/dev-mode';
 import { wrappedValidateAjvStorage } from 'rxdb/plugins/validate-ajv';
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
+
+// Add migration plugin (required for schema versioning)
+addRxPlugin(RxDBMigrationSchemaPlugin);
 
 const isDev = process.env.NODE_ENV === 'development';
 
@@ -32,6 +36,7 @@ function getStorage(): RxStorage<any, any> {
 
 export type RxProduct = {
   id: string;
+  workspace_id: string;
   name: string;
   barcode?: string;
   priceCents: number; // Integer currency
@@ -88,6 +93,8 @@ export type RxCashier = {
   is_active: boolean;
   role: 'admin' | 'manager' | 'cashier';
   updated_at?: string; // RxDB likes updated_at
+  role_id?: string;
+  workspace_id?: string;
 };
 export type CashierDoc = RxDocument<RxCashier>;
 export type CashierCollection = RxCollection<RxCashier>;
@@ -103,13 +110,16 @@ export type MyDatabase = RxDatabase<MyDatabaseCollections>;
 
 const productSchema: RxJsonSchema<RxProduct> = {
   title: 'product schema',
-  version: 0,
+  version: 1, // Incremented for workspace_id addition
   primaryKey: 'id',
   type: 'object',
   properties: {
     id: {
       type: 'string',
       maxLength: 100, // primary key needs max length
+    },
+    workspace_id: {
+      type: 'string',
     },
     name: {
       type: 'string',
@@ -132,7 +142,7 @@ const productSchema: RxJsonSchema<RxProduct> = {
       format: 'date-time',
     },
   },
-  required: ['id', 'name', 'priceCents', 'stock_quantity', 'updated_at'],
+  required: ['id', 'workspace_id', 'name', 'priceCents', 'stock_quantity', 'updated_at'],
 };
 
 const transactionSchema: RxJsonSchema<RxTransaction> = {
@@ -243,6 +253,15 @@ export const createDatabase = async (): Promise<MyDatabase> => {
       await db.addCollections({
         products: {
           schema: productSchema,
+          migrationStrategies: {
+            // Migration from version 0 to version 1: add workspace_id
+            1: (oldDoc: any) => {
+              return {
+                ...oldDoc,
+                workspace_id: oldDoc.workspace_id || 'default',
+              };
+            },
+          },
         },
         transactions: {
           schema: transactionSchema,

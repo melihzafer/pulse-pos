@@ -20,7 +20,7 @@ import {
   Package,
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { db, useAuthStore } from '@pulse/core-logic';
+import { db, useAuthStore, formatMoney } from '@pulse/core-logic';
 import { format, startOfDay, endOfDay, parseISO } from 'date-fns';
 import type { ZReportData } from './types';
 
@@ -334,7 +334,7 @@ export const ZReportScreen: React.FC = () => {
                 </div>
                 <div className="text-right">
                   <div className="text-3xl font-bold text-gray-900 dark:text-white">
-                    {reportData.totalSales.toFixed(2)} <span className="text-lg">BGN</span>
+                    {formatMoney(reportData.totalSales)}
                   </div>
                   <div className="text-sm text-gray-500 dark:text-slate-400">Total Sales</div>
                 </div>
@@ -358,13 +358,13 @@ export const ZReportScreen: React.FC = () => {
               <StatCard
                 icon={TrendingUp}
                 label="Avg Transaction"
-                value={`${reportData.averageTransaction.toFixed(2)} BGN`}
+                value={formatMoney(reportData.averageTransaction)}
                 color="purple"
               />
               <StatCard
                 icon={DollarSign}
                 label="VAT Collected"
-                value={`${reportData.vatAmount.toFixed(2)} BGN`}
+                value={formatMoney(reportData.vatAmount)}
                 color="amber"
               />
             </div>
@@ -383,7 +383,7 @@ export const ZReportScreen: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <span className="font-semibold text-gray-900 dark:text-white">Total</span>
                       <span className="font-bold text-lg text-gray-900 dark:text-white">
-                        {reportData.totalSales.toFixed(2)} BGN
+                        {formatMoney(reportData.totalSales)}
                       </span>
                     </div>
                   </div>
@@ -396,21 +396,21 @@ export const ZReportScreen: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 dark:text-slate-400">Opening Cash</span>
-                    <span className="font-medium text-gray-900 dark:text-white">{reportData.openingCash.toFixed(2)} BGN</span>
+                    <span className="font-medium text-gray-900 dark:text-white">{formatMoney(reportData.openingCash)}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 dark:text-slate-400">+ Cash Sales</span>
-                    <span className="font-medium text-green-600">{reportData.cashSales.toFixed(2)} BGN</span>
+                    <span className="font-medium text-green-600">{formatMoney(reportData.cashSales)}</span>
                   </div>
                   <div className="flex justify-between items-center py-2">
                     <span className="text-gray-600 dark:text-slate-400">- Cash Refunds</span>
                     <span className="font-medium text-red-500">
-                      -{(reportData.refundsTotal * (reportData.cashSales / (reportData.totalSales || 1))).toFixed(2)} BGN
+                      -{formatMoney(reportData.refundsTotal * (reportData.cashSales / (reportData.totalSales || 1)))}
                     </span>
                   </div>
                   <div className="flex justify-between items-center py-2 border-t border-gray-200 dark:border-slate-700">
                     <span className="font-semibold text-gray-900 dark:text-white">Expected</span>
-                    <span className="font-bold text-gray-900 dark:text-white">{reportData.expectedCash.toFixed(2)} BGN</span>
+                    <span className="font-bold text-gray-900 dark:text-white">{formatMoney(reportData.expectedCash)}</span>
                   </div>
                   
                   <div className="pt-4 mt-4 border-t border-gray-200 dark:border-slate-700">
@@ -442,8 +442,8 @@ export const ZReportScreen: React.FC = () => {
                             ? 'text-blue-600'
                             : 'text-red-600'
                         }`}>
-                          {(parseFloat(actualCash) - reportData.expectedCash >= 0 ? '+' : '')}
-                          {(parseFloat(actualCash) - reportData.expectedCash).toFixed(2)} BGN
+                          {parseFloat(actualCash) - reportData.expectedCash >= 0 ? '+' : ''}
+                          {formatMoney(parseFloat(actualCash) - reportData.expectedCash)}
                         </span>
                       </div>
                     )}
@@ -462,7 +462,7 @@ export const ZReportScreen: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {reportData.refundsCount} ({reportData.refundsTotal.toFixed(2)} BGN)
+                      {reportData.refundsCount} ({formatMoney(reportData.refundsTotal)})
                     </div>
                     <div className="text-sm text-gray-500 dark:text-slate-400">Refunds</div>
                   </div>
@@ -473,7 +473,7 @@ export const ZReportScreen: React.FC = () => {
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {reportData.voidsCount} ({reportData.voidsTotal.toFixed(2)} BGN)
+                      {reportData.voidsCount} ({formatMoney(reportData.voidsTotal)})
                     </div>
                     <div className="text-sm text-gray-500 dark:text-slate-400">Voids</div>
                   </div>
@@ -495,7 +495,7 @@ export const ZReportScreen: React.FC = () => {
                     </div>
                     <div className="flex items-center gap-6 text-sm">
                       <span className="text-gray-500 dark:text-slate-400">{product.quantity} sold</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">{product.revenue.toFixed(2)} BGN</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">{formatMoney(product.revenue)}</span>
                     </div>
                   </div>
                 ))}
@@ -582,7 +582,7 @@ const PaymentRow: React.FC<{
         </div>
         <span className="text-gray-600 dark:text-slate-400">{label}</span>
       </div>
-      <span className="font-medium text-gray-900 dark:text-white">{amount.toFixed(2)} BGN</span>
+      <span className="font-medium text-gray-900 dark:text-white">{formatMoney(amount)}</span>
     </div>
   );
 };

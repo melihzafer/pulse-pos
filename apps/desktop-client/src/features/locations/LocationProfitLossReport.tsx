@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { LocationService } from '@pulse/core-logic';
+import { LocationService, formatMoney } from '@pulse/core-logic';
 import type { Location } from '@pulse/core-logic';
 import { Download, Calendar } from 'lucide-react';
 import * as XLSX from 'xlsx';
@@ -189,21 +189,21 @@ export const LocationProfitLossReport: React.FC = () => {
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('common.totalRevenue', 'Total Revenue')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(totalRevenue)}
+            {formatMoney(totalRevenue)}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('common.totalCOGS', 'Total COGS')}</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(totalCOGS)}
+            {formatMoney(totalCOGS)}
           </p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-sm border border-gray-100 dark:border-slate-700">
           <p className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">{t('common.grossProfit', 'Gross Profit')}</p>
           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-            {new Intl.NumberFormat('bg-BG', { style: 'currency', currency: 'BGN' }).format(totalGrossProfit)}
+            {formatMoney(totalGrossProfit)}
           </p>
         </div>
 
@@ -322,7 +322,7 @@ export const LocationProfitLossReport: React.FC = () => {
                     <span className="font-medium text-gray-900 dark:text-white">{pl.location.name}</span>
                   </div>
                   <span className="font-bold text-gray-900 dark:text-white">
-                    {pl.revenue.toFixed(2)} <span className="text-xs text-gray-500 font-normal">BGN</span>
+                    {formatMoney(pl.revenue)}
                   </span>
                 </div>
               ))}

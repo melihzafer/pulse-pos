@@ -30,7 +30,7 @@ import {
   PackageMinus,
   X,
 } from 'lucide-react';
-import { db } from '@pulse/core-logic';
+import { db, formatMoney } from '@pulse/core-logic';
 import { format } from 'date-fns';
 import { toast } from 'sonner';
 import clsx from 'clsx';
@@ -253,7 +253,7 @@ export const QuickActionsDashboard: React.FC<QuickActionsDashboardProps> = ({ on
               <Barcode className="w-5 h-5" />
               <div>
                 <p className="font-medium">{product.name}</p>
-                <p className="text-sm opacity-80">{product.sale_price.toFixed(2)} BGN - Go to POS</p>
+                <p className="text-sm opacity-80">{formatMoney(product.sale_price)} - Go to POS</p>
               </div>
             </div>
           );
@@ -532,7 +532,7 @@ export const QuickActionsDashboard: React.FC<QuickActionsDashboardProps> = ({ on
                 {t('dashboard.todaySales', "Today's Sales")}
               </p>
               <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">
-                {stats.todaySales.toFixed(2)} BGN
+                {formatMoney(stats.todaySales)}
               </p>
             </div>
             <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">

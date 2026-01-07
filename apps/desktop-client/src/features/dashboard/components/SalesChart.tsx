@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Sale } from '@pulse/core-logic';
+import { Sale, formatMoney } from '@pulse/core-logic';
 import { format, subDays, startOfDay, endOfDay, isWithinInterval } from 'date-fns';
 import { useTranslation } from 'react-i18next';
 
@@ -45,7 +45,7 @@ export const SalesChart: React.FC<SalesChartProps> = ({ sales, days = 7 }) => {
         <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-xl border border-gray-100 dark:border-slate-700">
           <p className="font-medium text-gray-900 dark:text-white mb-2">{label}</p>
           <p className="text-blue-600 dark:text-blue-400 font-bold">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BGN' }).format(payload[0].value)}
+            {formatMoney(payload[0].value)}
           </p>
           <p className="text-sm text-gray-500 dark:text-slate-400">
             {payload[0].payload.count} {t('dashboard.salesCount', 'sales')}
